@@ -14,7 +14,18 @@ The workspace is intentionally parameterized. No Azure resource or Azure DevOps 
 
 Queue messages are processed at least once. The DCR ingestion API doesn't guarantee exactly-once writes; consumers should deduplicate using `EventId`. The workbook presents the latest event by repository, alert, and branch.
 
-`infra/main.bicep` orchestrates the application components in `infra/modules/`: identity, storage, monitoring, Service Bus, Function, and Key Vault. The existing workspace resources remain in `infra/workspace.bicep`, deployed to the specified workspace subscription and resource group. The entry-point parameters, outputs, and resource names are unchanged.
+`infra/main.bicep` orchestrates single-component modules in `infra/modules/`. `infra/workspace.bicep` orchestrates the Sentinel components in the existing workspace subscription and resource group. Entry-point parameters, outputs, and resource names are preserved.
+
+| Folder | Modules |
+| --- | --- |
+| `identity/` | `user-assigned-identity` |
+| `storage/` | `storage-account` (with deployment container), `storage-role-assignment` |
+| `messaging/` | `service-bus-namespace`, `service-bus-queue` (with send-only rule), `service-bus-queue-role-assignment`, `service-bus-diagnostics` |
+| `compute/` | `flex-consumption-plan`, `function-app` (with app settings) |
+| `monitoring/` | `application-insights` |
+| `security/` | `key-vault` |
+| `networking/` | `private-endpoint` (with DNS zone group), `monitor-private-link-scoped-resource` |
+| `sentinel/` | `custom-table`, `data-collection-endpoint`, `data-collection-rule`, `data-collection-rule-role-assignment`, `analytics-rule`, `workbook` |
 
 ## Prerequisites
 
@@ -49,6 +60,57 @@ Set this value explicitly to `true` or `false` before provisioning; `true` creat
 `azd up` provisions the Bicep resources and deploys the Function. Provisioning includes a queue-scoped `sendOnly` SAS rule for service-hook SAS mode and a Key Vault with RBAC enabled. The Function uses managed identity for host storage, Service Bus receive, and DCR publishing. Its Application Insights component writes to the selected Sentinel workspace.
 
 The deployment uses a cross-resource-group module for the existing workspace. The deploying identity must have the needed access in both subscriptions if the workspace is in a different subscription. Keep the Function app region and workspace/DCR region aligned where required by Azure Monitor.
+
+## Optional private hub & spoke integration
+
+Omit `privateNetwork` (or set it to `null`) to keep the current public deployment. Supplying this typed object enables integration with an **existing** hub & spoke landing zone; the template does not create or overwrite VNets, subnets, peerings, routes, firewalls, DNS zones, VNet links, or the shared Azure Monitor Private Link Scope (AMPLS).
+
+| Component | Private mode |
+| --- | --- |
+| Flex Consumption Function | Outbound VNet integration and an inbound `sites` private endpoint; public access disabled. |
+| Function storage | Blob, Queue, and Table private endpoints; public access and shared-key access disabled. Flex Consumption does not need an Azure Files endpoint. |
+| Service Bus | **Premium, one messaging unit** (additional cost), with a namespace private endpoint. Public access disabled unless explicitly opted in. |
+| Key Vault | Vault private endpoint and public access disabled. Private mode enables purge protection, which cannot subsequently be disabled. Public mode leaves the existing purge-protection setting unchanged. |
+| Azure Monitor | Private DCE in the workspace region, attached to the DCR; the Function publishes to the DCE, not the public DCR endpoint. The DCE and Application Insights are linked to the existing AMPLS. Application Insights public ingestion and query are disabled. |
+
+### Landing-zone prerequisites
+
+- Two **different existing subnets** in the application region: a Function integration subnet delegated to `Microsoft.App/environments` (recommended `/27` or larger for one app), and a nondelegated private-endpoint subnet with at least six available addresses. Do not share the integration subnet with Container Apps or private endpoints. Register `Microsoft.App` in the application subscription; for cross-subscription VNet integration, register `Microsoft.Web` in the VNet subscription.
+- Existing private DNS zones for `privatelink.blob.core.windows.net`, `privatelink.queue.core.windows.net`, `privatelink.table.core.windows.net`, `privatelink.servicebus.windows.net`, `privatelink.vaultcore.azure.net`, and `privatelink.azurewebsites.net`. Supply their full resource IDs, including centralized zones in another resource group/subscription. The template creates DNS zone groups on its endpoints, not the zones or VNet links. Avoid duplicate zone-group ownership if Azure Policy already deploys these groups.
+- The spoke must resolve those zones through VNet links or the hub's DNS forwarding/Azure DNS Private Resolver. Peering alone does not provide DNS resolution. Verify both the Function hostname and its `scm` deployment hostname resolve to the private endpoint.
+- An existing AMPLS with an approved private endpoint reachable from the spoke and the Azure Monitor private DNS zones configured (`privatelink.monitor.azure.com`, `privatelink.oms.opinsights.azure.com`, `privatelink.ods.opinsights.azure.com`, `privatelink.agentsvc.azure-automation.net`, and the applicable storage zone). The **existing Sentinel workspace must already be linked to this AMPLS**; the template only adds its new DCE and Application Insights links.
+- **Shared workspace policy is intentionally not changed.** The workspace owner must disable public ingestion/query as appropriate and configure AMPLS ingestion/query access modes if the entire workspace must be private-only. Adding an AMPLS association alone does not block public ingestion, including the direct DCR endpoint retained for compatibility. Assess other workspace consumers before changing this shared policy.
+- Existing NSGs/UDRs must allow DNS to the chosen resolver, HTTPS (443) to Storage, Key Vault and Monitor, and AMQP TLS (5671) to Service Bus. Flex Consumption already routes all outbound traffic through the integration subnet; configure the existing UDR to the hub firewall and allow required platform/identity/deployment endpoints. Private endpoints do not eliminate every platform egress dependency.
+- The deployment identity needs subnet join and private-endpoint permissions, private DNS zone-group/zone join permissions, and permission to add scoped resources to AMPLS, including across resource groups/subscriptions. Run deployment, Function publishing, Key Vault secret operations, and backfill from a network-connected workstation or self-hosted runner with private DNS resolution; a public hosted runner cannot reach the private data/deployment endpoints.
+
+### Configure the private deployment
+
+Copy and edit [`infra/private-network.example.bicepparam`](infra/private-network.example.bicepparam), replacing all example subscription IDs, names, regions, subnet IDs, DNS zone IDs, and AMPLS ID. Keep the DCE, DCR and workspace in the same region. Preview the actual target before provisioning:
+
+```powershell
+az deployment group what-if `
+  --resource-group <application-resource-group> `
+  --parameters .\infra\private-network.example.bicepparam
+
+# Only after reviewing the preview:
+az deployment group create `
+  --resource-group <application-resource-group> `
+  --parameters .\infra\private-network.example.bicepparam
+```
+
+These commands provision infrastructure only. Publish the Function separately from a private-network-connected host. To use the existing `azd up` flow instead, add a `privateNetwork` entry to `infra/main.parameters.json` whose `value` is the object from the example (JSON syntax, with real full IDs), and run azd from the connected host. Do not put credentials in the parameter file. The default azd parameter file deliberately omits this object.
+
+**Migration:** Azure Service Bus cannot change an existing namespace from Standard to Premium in place. For an existing public installation, provision a separate application resource group/environment and migrate producers/backfill to the new queue; do not simply enable private mode against the existing Standard namespace. Adding VNet integration or restricting an existing endpoint can also interrupt access. Reverting to public mode is not a cleanup mechanism: incremental deployments do not remove previously created private endpoints or AMPLS associations.
+
+### Azure DevOps service-hook boundary
+
+**Azure DevOps Services service hooks cannot directly deliver to a private-only Service Bus namespace.** A service connection changes authentication, not network reachability; the trusted-services bypass is not a general Azure DevOps networking bypass.
+
+With the default private configuration (`allowPublicServiceBusAccess: false` or omitted), use a separately designed ingress relay with private backend connectivity, or run the supplied backfill utility from a connected host. The relay and continuous polling are **not implemented** by this template; backfill is a point-in-time active-alert import, not a replacement for continuous events.
+
+If direct service hooks must remain available, explicitly set `privateNetwork.allowPublicServiceBusAccess: true`. Only Service Bus then retains an authenticated public endpoint, while the Function and other new data endpoints remain private; this is a **hybrid exception, not an end-to-end private-only deployment**. Existing SAS and service-connection authentication options remain supported. Private networking never replaces authentication or RBAC.
+
+References: [Functions networking](https://learn.microsoft.com/azure/azure-functions/functions-networking-options), [Service Bus private endpoints](https://learn.microsoft.com/azure/service-bus-messaging/private-link-service), [Azure Monitor Private Link](https://learn.microsoft.com/azure/azure-monitor/logs/private-link-configure), and [Logs Ingestion API endpoints](https://learn.microsoft.com/azure/azure-monitor/logs/logs-ingestion-api-overview#endpoint).
 
 ## Configure Azure DevOps service hooks
 
@@ -136,4 +198,6 @@ dotnet build .\GhasSentinel.sln
 dotnet test .\GhasSentinel.sln
 az bicep build --file .\infra\main.bicep
 az bicep build --file .\infra\workspace.bicep
+az bicep build-params --file .\infra\private-network.example.bicepparam
+python -m unittest discover -s .\tests\infra -p "test_*.py"
 ```

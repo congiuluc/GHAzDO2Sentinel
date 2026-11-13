@@ -1,8 +1,8 @@
 targetScope = 'resourceGroup'
 
-param functionAppName string
-param planName string
+param name string
 param location string
+param planResourceId string
 param identityResourceId string
 param identityClientId string
 param storageAccountName string
@@ -14,26 +14,14 @@ param logsIngestionEndpoint string
 param dcrImmutableId string
 param maximumInstanceCount int
 param instanceMemoryMB int
+param integrationSubnetId string = ''
 
 resource applicationInsights 'Microsoft.Insights/components@2020-02-02' existing = {
   name: applicationInsightsName
 }
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2024-04-01' = {
-  name: planName
-  location: location
-  kind: 'functionapp'
-  sku: {
-    tier: 'FlexConsumption'
-    name: 'FC1'
-  }
-  properties: {
-    reserved: true
-  }
-}
-
 resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
-  name: functionAppName
+  name: name
   location: location
   kind: 'functionapp,linux'
   identity: {
@@ -43,8 +31,10 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
     }
   }
   properties: {
-    serverFarmId: appServicePlan.id
+    serverFarmId: planResourceId
     httpsOnly: true
+    publicNetworkAccess: empty(integrationSubnetId) ? 'Enabled' : 'Disabled'
+    virtualNetworkSubnetId: empty(integrationSubnetId) ? null : integrationSubnetId
     siteConfig: {
       minTlsVersion: '1.2'
     }
@@ -94,3 +84,4 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
 }
 
 output name string = functionApp.name
+output resourceId string = functionApp.id

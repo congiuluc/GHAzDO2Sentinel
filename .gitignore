@@ -5,6 +5,7 @@
 *.trx
 *.coverage
 *.coveragexml
+**/__pycache__/
 
 # Local tooling and editor state
 .vs/
@@ -27,9 +28,5 @@
 # Bicep build outputs
 /infra/main.json
 /infra/workspace.json
-/infra/modules/identity.json
-/infra/modules/storage.json
-/infra/modules/monitoring.json
-/infra/modules/service-bus.json
-/infra/modules/function.json
-/infra/modules/key-vault.json
+/infra/modules/**/*.json
+/infra/private-network.example.json
