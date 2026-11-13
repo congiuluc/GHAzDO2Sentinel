@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="An interactive presentation of the Azure DevOps Advanced Security to Microsoft Sentinel integration.">
   <title>GHAS to Sentinel | Presentation</title>
   <script>
@@ -11,8 +11,10 @@
       const theme =
         param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
       document.documentElement.setAttribute("data-theme", theme);
+      document.documentElement.classList.add("js");
     })();
   </script>
+  <script src="assets/nav.js" defer></script>
   <style>
     :root {
       color-scheme: light;
@@ -111,12 +113,13 @@
     a { color: var(--cp-accent); text-underline-offset: .2em; }
     a:hover { color: var(--cp-accent-hover); }
     a:focus-visible, button:focus-visible, pre:focus-visible { outline: 3px solid var(--cp-accent); outline-offset: 4px; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     code, pre { font-family: Consolas, "Courier New", Courier, monospace; }
     code { overflow-wrap: anywhere; }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     .wrap { width: min(100% - 3rem, 76rem); margin: 0 auto; }
-    .site-header { border-bottom: 1px solid var(--cp-border); background: var(--cp-bg-elevated); }
-    .header-inner { min-height: 4.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .site-header { position: relative; z-index: 20; border-bottom: 1px solid var(--cp-border); background: var(--cp-bg-elevated); }
+    .header-inner { position: relative; min-height: 4.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
     .brand { display: inline-flex; align-items: center; gap: .75rem; color: var(--cp-text); font-weight: 700; text-decoration: none; }
     .brand:hover { color: var(--cp-text); }
     .brand-mark { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .625rem; background: var(--cp-accent); color: var(--cp-accent-fg); font-size: .85rem; }
@@ -124,10 +127,23 @@
     .site-nav a { padding: .45rem .65rem; border-radius: .5rem; color: var(--cp-text); font-size: .88rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
     .site-nav a:hover { background: var(--cp-surface-soft); color: var(--cp-accent); }
     .site-nav a[aria-current="page"] { margin-left: .5rem; border: 1px solid var(--cp-accent); background: var(--cp-accent-soft); color: var(--cp-accent); }
+    .nav-toggle { display: none; align-items: center; gap: .45rem; min-height: 2.75rem; padding: .45rem .8rem; border: 1px solid var(--cp-border-strong); border-radius: .625rem; background: var(--cp-surface); color: var(--cp-text); font: inherit; font-size: .9rem; font-weight: 600; cursor: pointer; }
+    .nav-toggle:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
+    .nav-toggle svg { width: 1.25rem; height: 1.25rem; }
+    .nav-toggle path { transition: transform .2s, opacity .2s; transform-origin: center; }
+    .nav-open .nav-toggle .bar-top { transform: translateY(5px) rotate(45deg); }
+    .nav-open .nav-toggle .bar-mid { opacity: 0; }
+    .nav-open .nav-toggle .bar-bot { transform: translateY(-5px) rotate(-45deg); }
     @media (max-width: 1100px) {
       .header-inner { flex-wrap: wrap; gap: 0; padding-top: .75rem; }
       .site-nav { flex-basis: 100%; margin: .5rem -.65rem 0; padding-bottom: .5rem; overflow-x: auto; scrollbar-width: thin; }
       .site-nav a[aria-current="page"] { margin-left: auto; }
+      .js .header-inner { flex-wrap: nowrap; min-height: 4rem; padding-top: 0; }
+      .js .nav-toggle { display: inline-flex; }
+      .js .site-nav { position: absolute; top: calc(100% + 1px); right: 0; left: 0; z-index: 25; display: none; flex-direction: column; align-items: stretch; gap: .15rem; max-height: calc(100dvh - 5rem); margin: 0; padding: .75rem; overflow-y: auto; border: 1px solid var(--cp-border); border-top: 0; border-radius: 0 0 1rem 1rem; background: var(--cp-bg-elevated); box-shadow: 0 16px 32px rgba(0, 0, 0, .14); }
+      .js .nav-open .site-nav { display: flex; }
+      .js .site-nav a { display: flex; align-items: center; min-height: 2.75rem; padding: .6rem .85rem; font-size: 1rem; }
+      .js .site-nav a[aria-current="page"] { margin: .5rem 0 0; justify-content: center; }
     }
     .deck { padding: 2rem 0 2.5rem; }
     .deck-header { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; margin-bottom: 1rem; }
@@ -226,19 +242,22 @@
     .counter { color: var(--cp-text-soft); font-size: .8rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .hint { margin: .85rem 0 0; color: var(--cp-text-soft); font-size: .8rem; text-align: center; }
     .noscript-note { color: var(--cp-text-soft); }
-    @media (max-width: 980px) {
+    #slides { container-type: inline-size; }
+    @container (max-width: 930px) {
       .architecture-grid { grid-template-columns: minmax(0, 1fr); }
       .architecture-grid > .diagram-arrow { min-height: 1rem; transform: rotate(90deg); }
       .architecture-sources { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
-    @media (max-width: 850px) {
+    @container (max-width: 800px) {
       .slide-layout { grid-template-columns: minmax(0, 1fr); }
       .slide { min-height: 0; }
     }
-    @media (max-width: 600px) {
-      .wrap { width: min(100% - 2rem, 76rem); }
-      .deck { padding-top: 1.25rem; }
-      .deck-header p { display: none; }
+    @media (max-width: 850px) {
+      body:not(.presenting) .controls { position: sticky; bottom: 0; z-index: 10; margin: 1rem -1rem 0; padding: .65rem 1rem calc(.65rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--cp-border); background: var(--cp-bg-elevated); box-shadow: 0 -8px 20px rgba(0, 0, 0, .06); }
+      .deck { padding-bottom: 0; }
+      .hint { margin-bottom: 1.5rem; }
+    }
+    @container (max-width: 570px) {
       .slide { padding: 1.5rem; }
       h2 { font-size: clamp(2.2rem, 10vw, 3.2rem); }
       .next-steps, .process-steps, .process-outcomes { grid-template-columns: 1fr; }
@@ -247,11 +266,16 @@
       .process-fork { display: none; }
       .process-outcomes { margin-top: 1rem; }
       .next-steps .tile { min-height: 0; }
+    }
+    @media (max-width: 600px) {
+      .wrap { width: min(100% - 2rem, 76rem); }
+      .deck { padding-top: 1.25rem; }
+      .deck-header p { display: none; }
       .controls { gap: .5rem; grid-template-columns: auto minmax(3rem, 1fr) auto; }
       .progress-wrap { grid-template-columns: 1fr; gap: .25rem; text-align: center; }
       .controls .button { padding-inline: .75rem; }
     }
-    @media (max-width: 420px) {
+    @container (max-width: 390px) {
       .architecture-sources, .architecture-path { grid-template-columns: minmax(0, 1fr); }
       .architecture-path > .diagram-arrow { min-height: 1rem; transform: rotate(90deg); }
     }
@@ -269,11 +293,22 @@
     .presenting .diagram-slide h2 { font-size: 50px; }
     .presenting .intro { font-size: 19px; }
     .presenting .slide-layout { grid-template-columns: minmax(0, 1fr) minmax(18rem, .9fr); }
-    .presenting .controls { position: fixed; left: 50%; bottom: 1rem; z-index: 5; width: min(46rem, calc(100vw - 2rem)); margin: 0; padding: .6rem .75rem; border: 1px solid var(--cp-border); border-radius: .75rem; background: var(--cp-surface); box-shadow: 0 8px 24px rgba(0, 0, 0, .18); transform: translateX(-50%); transition: opacity .2s; }
+    .presenting .controls { position: fixed; left: 50%; bottom: calc(1rem + env(safe-area-inset-bottom)); z-index: 5; width: min(46rem, calc(100vw - 2rem)); margin: 0; padding: .6rem .75rem; border: 1px solid var(--cp-border); border-radius: .75rem; background: var(--cp-surface); box-shadow: 0 8px 24px rgba(0, 0, 0, .18); transform: translateX(-50%); transition: opacity .2s; }
     .presenting.idle .controls:not(:focus-within) { opacity: 0; pointer-events: none; }
-    @media (prefers-reduced-motion: reduce) { .presenting .controls { transition: none; } }
+    #slides { touch-action: pan-y pinch-zoom; }
+    .rotate-hint { display: none; }
+    @media (orientation: portrait) and (max-width: 700px) {
+      .presenting .rotate-hint { position: fixed; top: calc(1rem + env(safe-area-inset-top)); left: 50%; z-index: 5; display: flex; align-items: center; gap: .5rem; padding: .5rem .85rem; border: 1px solid var(--cp-border); border-radius: 999px; background: var(--cp-surface); color: var(--cp-text-soft); font-size: .8rem; white-space: nowrap; box-shadow: 0 8px 24px rgba(0, 0, 0, .14); transform: translateX(-50%); transition: opacity .2s; }
+      .presenting.idle .rotate-hint { opacity: 0; }
+      .presenting .controls .button:not(.icon-button) { padding-inline: .6rem; }
+    }
+    @media (max-height: 500px) {
+      .presenting .controls { bottom: calc(.5rem + env(safe-area-inset-bottom)); width: min(34rem, calc(100vw - 2rem)); padding: .35rem .5rem; }
+      .presenting .controls .button { min-height: 2.25rem; padding-block: .3rem; }
+    }
+    @media (prefers-reduced-motion: reduce) { .presenting .controls, .rotate-hint, .nav-toggle path { transition: none; } }
     @media print {
-      .site-header, .deck-header, .controls, .hint, .noscript-note { display: none !important; }
+      .site-header, .deck-header, .controls, .hint, .noscript-note, .rotate-hint { display: none !important; }
       .wrap { width: 100%; }
       .deck { padding: 0; }
       .slide, .slide[hidden] { display: grid; min-height: 95vh; border: 0; box-shadow: none; break-after: page; }
@@ -499,6 +534,7 @@
       </div>
     </nav>
     <p class="hint" id="hint" hidden>Press <kbd>F</kbd> to present full screen. Use the arrow keys or Space to navigate; <kbd>Esc</kbd> exits.</p>
+    <p class="rotate-hint" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M3 12a9 9 0 0 0 4 7.5M21 12a9 9 0 0 0-4-7.5"/></svg>Rotate for a larger view</p>
     <div class="sr-only" id="announcement" aria-live="polite" aria-atomic="true"></div>
   </main>
   <script>
@@ -581,15 +617,47 @@
           setPresenting(on);
         }
       };
-      document.addEventListener("fullscreenchange", () => setPresenting(Boolean(document.fullscreenElement)));
+      document.addEventListener("fullscreenchange", () => {
+        const on = Boolean(document.fullscreenElement);
+        setPresenting(on);
+        if (on && screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock("landscape").catch(() => {});
+        }
+      });
       window.addEventListener("resize", () => { if (isPresenting()) { fitStage(); } });
       document.addEventListener("mousemove", wake);
+      let tapWokeControls = false;
+      document.addEventListener("pointerdown", (event) => {
+        tapWokeControls = event.pointerType !== "mouse" && document.body.classList.contains("idle");
+        wake();
+      });
       stage.addEventListener("click", (event) => {
-        if (!isPresenting() || (event.target instanceof Element && event.target.closest("a, button, pre, summary"))) {
+        if (!isPresenting() || tapWokeControls || (event.target instanceof Element && event.target.closest("a, button, pre, summary"))) {
+          tapWokeControls = false;
           return;
         }
         showSlide(current + 1);
       });
+      let swipeStart = null;
+      stage.addEventListener("touchstart", (event) => {
+        const touch = event.touches[0];
+        swipeStart = event.touches.length === 1 && !(event.target instanceof Element && event.target.closest("pre"))
+          ? { x: touch.clientX, y: touch.clientY } : null;
+      }, { passive: true });
+      stage.addEventListener("touchend", (event) => {
+        if (!swipeStart) { return; }
+        const touch = event.changedTouches[0];
+        const dx = touch.clientX - swipeStart.x;
+        const dy = touch.clientY - swipeStart.y;
+        swipeStart = null;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          tapWokeControls = true;
+          showSlide(current + (dx < 0 ? 1 : -1), { reveal: true });
+        }
+      }, { passive: true });
+      if (window.matchMedia("(pointer: coarse)").matches) {
+        hint.textContent = "Swipe left or right to change slides. Use the full-screen button to present.";
+      }
 
       previous.addEventListener("click", () => showSlide(current - 1, { reveal: true }));
       next.addEventListener("click", () => showSlide(current + 1, { reveal: true }));
