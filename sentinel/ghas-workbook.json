@@ -1,0 +1,153 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "name": "ShowOperationalPanels",
+            "type": 3,
+            "values": [
+              {
+                "value": "false",
+                "label": "No",
+                "selected": true
+              },
+              {
+                "value": "true",
+                "label": "Yes"
+              }
+            ]
+          }
+        ],
+        "style": "form"
+      },
+      "name": "Workbook parameters"
+    },
+    {
+      "type": 1,
+      "content": {
+        "json": "## GitHub Advanced Security alerts\n\nActive GHAS alerts, grouped by the latest event for each repository, alert, and branch."
+      },
+      "name": "GHAS title"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "GHASAlerts_CL\n| where TimeGenerated > ago(30d)\n| summarize arg_max(TimeGenerated, *) by RepositoryUrl, AlertId, GitRef\n| where State =~ 'active'\n| project TimeGenerated, Severity, AlertType, Title, ProjectName, RepositoryName, GitRef, AlertUrl\n| order by TimeGenerated desc",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "title": "Active GHAS alerts"
+      },
+      "name": "Active GHAS alerts"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "GHASAlerts_CL\n| where TimeGenerated > ago(30d)\n| summarize arg_max(TimeGenerated, *) by RepositoryUrl, AlertId, GitRef\n| where State =~ 'active'\n| summarize AlertCount = count() by Severity\n| order by AlertCount desc",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "title": "Active alerts by severity"
+      },
+      "name": "Alerts by severity"
+    },
+    {
+      "type": 3,
+      "conditionalVisibility": {
+        "parameterName": "ShowOperationalPanels",
+        "comparison": "isEqualTo",
+        "value": "true"
+      },
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AppTraces\n| where TimeGenerated > ago(24h)\n| where Message has 'Ingested GHAS event' or SeverityLevel >= 3\n| project TimeGenerated, SeverityLevel, Message, OperationName\n| order by TimeGenerated desc",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "title": "Function processing and errors (24h)"
+      },
+      "name": "Function operations"
+    },
+    {
+      "type": 3,
+      "conditionalVisibility": {
+        "parameterName": "ShowOperationalPanels",
+        "comparison": "isEqualTo",
+        "value": "true"
+      },
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AppExceptions\n| where TimeGenerated > ago(24h)\n| project TimeGenerated, ExceptionType, ProblemId, OuterMessage, OperationName\n| order by TimeGenerated desc",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "title": "Function exceptions (24h)"
+      },
+      "name": "Function exceptions"
+    },
+    {
+      "type": 3,
+      "conditionalVisibility": {
+        "parameterName": "ShowOperationalPanels",
+        "comparison": "isEqualTo",
+        "value": "true"
+      },
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\n| where TimeGenerated > ago(24h)\n| where ResourceProvider =~ 'MICROSOFT.SERVICEBUS'\n| summarize Events = count() by Category, OperationName\n| order by Events desc",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "title": "Service Bus operations (24h)"
+      },
+      "name": "Service Bus diagnostics"
+    },
+    {
+      "type": 3,
+      "conditionalVisibility": {
+        "parameterName": "ShowOperationalPanels",
+        "comparison": "isEqualTo",
+        "value": "true"
+      },
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureMetrics\n| where TimeGenerated > ago(24h)\n| where ResourceProvider =~ 'MICROSOFT.SERVICEBUS'\n| where MetricName has 'DeadletteredMessages'\n| summarize arg_max(TimeGenerated, Total) by Resource, MetricName\n| project TimeGenerated, Resource, MetricName, Total\n| order by TimeGenerated desc",
+        "size": 0,
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "title": "Service Bus dead-letter metrics (24h)"
+      },
+      "name": "Dead-letter metrics"
+    }
+  ]
+}

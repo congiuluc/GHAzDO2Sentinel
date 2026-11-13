@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directories:
+      - /src/Ghas.Sentinel.Backfill
+      - /src/Ghas.Sentinel.Core
+      - /src/Ghas.Sentinel.Function
+      - /tests/Ghas.Sentinel.Tests
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

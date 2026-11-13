@@ -1,0 +1,16 @@
+GHASAlerts_CL
+| where TimeGenerated > ago(1h)
+| where EventAction in ("Created", "InitialLoad")
+| where State =~ "active"
+| where AlertType =~ "secret"
+| summarize arg_max(TimeGenerated, *) by EventId
+| project
+    TimeGenerated,
+    AlertId,
+    Title,
+    Severity,
+    RepositoryName,
+    ProjectName,
+    OrganizationUrl,
+    AlertUrl,
+    EventId

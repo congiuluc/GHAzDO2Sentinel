@@ -1,0 +1,13 @@
+name: ghas-sentinel
+metadata:
+  template: ghas-sentinel@0.0.1
+
+infra:
+  provider: bicep
+  path: infra
+
+services:
+  function:
+    project: src/Ghas.Sentinel.Function
+    language: dotnet
+    host: function

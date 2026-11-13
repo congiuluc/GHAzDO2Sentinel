@@ -1,0 +1,35 @@
+# .NET build and test outputs
+**/bin/
+**/obj/
+**/TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Local tooling and editor state
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Azure Developer CLI environments and local credentials
+.azure/
+**/local.settings.json
+**/local.settings.*.json
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.publishsettings
+*.pubxml.user
+
+# Bicep build outputs
+/infra/main.json
+/infra/workspace.json
+/infra/modules/identity.json
+/infra/modules/storage.json
+/infra/modules/monitoring.json
+/infra/modules/service-bus.json
+/infra/modules/function.json
+/infra/modules/key-vault.json

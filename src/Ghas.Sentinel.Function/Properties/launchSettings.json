@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Ghas_Sentinel_Function": {
+      "commandName": "Project",
+      "commandLineArgs": "--port 7123",
+      "launchBrowser": false
+    }
+  }
+}

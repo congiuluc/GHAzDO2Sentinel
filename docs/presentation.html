@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive presentation of the Azure DevOps Advanced Security to Microsoft Sentinel integration.">
+  <title>GHAS to Sentinel | Presentation</title>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("scoutTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    /* Azure DevOps-inspired colors, with accessible light and dark variants. */
+    :root {
+      --cp-bg: #f3f6fa;
+      --cp-bg-elevated: #f9fbfd;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #edf3f8;
+      --cp-border: #d5e0e9;
+      --cp-border-strong: #8397a7;
+      --cp-text: #1b2533;
+      --cp-text-muted: #526170;
+      --cp-text-soft: #536271;
+      --cp-accent: #0067b8;
+      --cp-accent-hover: #005a9e;
+      --cp-accent-soft: rgba(0, 120, 212, 0.1);
+      --cp-accent-fg: #ffffff;
+      --cp-link: #0067b8;
+      --cp-highlight: rgba(0, 120, 212, 0.12);
+    }
+    html[data-theme="dark"] {
+      --cp-bg: #111a24;
+      --cp-bg-elevated: #172534;
+      --cp-surface: #1b2b3c;
+      --cp-surface-soft: #142231;
+      --cp-border: #3a526a;
+      --cp-border-strong: #7690a8;
+      --cp-text: #edf5fc;
+      --cp-text-muted: #b6c8d8;
+      --cp-text-soft: #bdcddd;
+      --cp-accent: #66b9ff;
+      --cp-accent-hover: #90cdff;
+      --cp-accent-soft: rgba(0, 120, 212, 0.2);
+      --cp-accent-fg: #10283d;
+      --cp-link: #66b9ff;
+      --cp-highlight: rgba(102, 185, 255, 0.18);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--cp-bg);
+      color: var(--cp-text);
+      font: 1rem/1.5 "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    a { color: var(--cp-accent); text-underline-offset: .2em; }
+    a:hover { color: var(--cp-accent-hover); }
+    a:focus-visible, button:focus-visible, pre:focus-visible { outline: 3px solid var(--cp-accent); outline-offset: 4px; }
+    code, pre { font-family: Consolas, "Courier New", Courier, monospace; }
+    code { overflow-wrap: anywhere; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .wrap { width: min(100% - 3rem, 76rem); margin: 0 auto; }
+    .site-header { border-bottom: 1px solid var(--cp-border); background: var(--cp-bg-elevated); }
+    .header-inner { min-height: 4.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .brand { display: inline-flex; align-items: center; gap: .75rem; color: var(--cp-text); font-weight: 700; text-decoration: none; }
+    .brand:hover { color: var(--cp-text); }
+    .brand-mark { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .625rem; background: var(--cp-accent); color: var(--cp-accent-fg); font-size: .85rem; }
+    .back-link { font-size: .9rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
+    .deck { padding: 2rem 0 2.5rem; }
+    .deck-header { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; margin-bottom: 1rem; }
+    .deck-header p { margin: 0; color: var(--cp-text-soft); font-size: .85rem; }
+    .deck-header strong { color: var(--cp-text); font-size: .9rem; }
+    .slide {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      align-content: center;
+      min-height: 34rem;
+      padding: clamp(1.5rem, 4vw, 3.75rem);
+      border: 1px solid var(--cp-border);
+      border-radius: 1rem;
+      background: var(--cp-surface);
+      box-shadow: 0 1px 2px var(--cp-border);
+    }
+    .slide[hidden] { display: none; }
+    .slide-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, .9fr); gap: clamp(2rem, 5vw, 4.5rem); align-items: center; }
+    .slide-layout > * { min-width: 0; }
+    .kicker { margin: 0 0 1rem; color: var(--cp-accent); font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    h2, h3, p { margin-top: 0; }
+    h2 { max-width: 17ch; margin-bottom: 1.15rem; font-size: clamp(2.4rem, 4.8vw, 4.5rem); line-height: 1.05; letter-spacing: -.045em; }
+    h2 em { color: var(--cp-accent); font-style: normal; }
+    h3 { margin-bottom: .35rem; font-size: 1rem; line-height: 1.3; }
+    .intro { max-width: 37rem; margin-bottom: 0; color: var(--cp-text-soft); font-size: clamp(1rem, 1.5vw, 1.15rem); }
+    .tag-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.75rem; }
+    .tag { padding: .35rem .65rem; border: 1px solid var(--cp-border); border-radius: .625rem; color: var(--cp-text); font-size: .8rem; font-weight: 600; }
+    .visual { padding: 1.5rem; border: 1px solid var(--cp-border); border-radius: 1rem; background: var(--cp-bg-elevated); }
+    .visual-label { margin-bottom: 1rem; color: var(--cp-text-soft); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .route { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; }
+    .route li { display: flex; align-items: center; gap: .75rem; padding: .75rem; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-surface); font-weight: 700; }
+    .number { flex: 0 0 2rem; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .625rem; background: var(--cp-accent-soft); color: var(--cp-accent); font-size: .75rem; font-weight: 700; }
+    .visual-foot { margin: 1rem 0 0; color: var(--cp-text-soft); font-size: .85rem; }
+    .stats { display: grid; gap: .75rem; }
+    .stat { display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; align-items: center; padding: 1rem; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-surface); }
+    .stat strong { color: var(--cp-accent); font-size: 2rem; line-height: 1; letter-spacing: -.05em; }
+    .stat span { color: var(--cp-text-soft); font-size: .9rem; }
+    .diagram-slide { align-content: start; }
+    .diagram-slide h2 { max-width: none; margin-bottom: .6rem; font-size: clamp(2rem, 3.8vw, 3.4rem); }
+    .diagram-slide .intro { max-width: 58rem; font-size: 1rem; }
+    .architecture, .processing { margin: 1.25rem 0 0; }
+    .architecture-grid { display: grid; grid-template-columns: minmax(0, .95fr) 1.25rem minmax(0, 1.22fr) 1.25rem minmax(0, 1.32fr); gap: .4rem; align-items: stretch; }
+    .architecture-group { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: .75rem; border: 1px solid var(--cp-border-strong); border-radius: .625rem; }
+    .architecture-group > h3 { margin: 0 0 .65rem; color: var(--cp-text-soft); font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; }
+    .architecture-sources { display: grid; gap: .5rem; }
+    .architecture-path { display: grid; grid-template-columns: minmax(0, 1fr) 1rem minmax(0, 1fr); gap: .25rem; align-items: stretch; }
+    .diagram-node { min-width: 0; padding: .65rem; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-bg-elevated); }
+    .diagram-node svg { display: block; width: 1.35rem; height: 1.35rem; margin-bottom: .35rem; color: var(--cp-accent); }
+    .diagram-node strong, .diagram-node small { display: block; overflow-wrap: anywhere; }
+    .diagram-node strong { font-size: .85rem; line-height: 1.25; }
+    .diagram-node small { margin-top: .25rem; color: var(--cp-text-soft); font-size: .75rem; line-height: 1.3; }
+    .diagram-arrow { display: grid; place-items: center; color: var(--cp-accent); font-size: 1.2rem; font-weight: 700; }
+    .architecture-output { margin: .65rem 0 0; color: var(--cp-text-soft); font-size: .75rem; line-height: 1.35; }
+    .architecture-output span { color: var(--cp-accent); font-weight: 700; }
+    .architecture figcaption, .processing figcaption { margin-top: .8rem; color: var(--cp-text-soft); font-size: .82rem; }
+    .process-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; margin: 0; padding: 0; list-style: none; }
+    .process-steps li { position: relative; min-width: 0; padding: 1rem; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-bg-elevated); }
+    .process-steps li:not(:last-child)::after { content: "\2192"; position: absolute; top: 50%; right: -1.25rem; color: var(--cp-accent); font-size: 1.15rem; font-weight: 700; transform: translateY(-50%); }
+    .process-steps strong, .process-steps small { display: block; }
+    .process-steps strong { margin-top: .5rem; font-size: .95rem; }
+    .process-steps small { margin-top: .25rem; color: var(--cp-text-soft); font-size: .8rem; }
+    .process-fork { display: block; width: 100%; height: 2rem; color: var(--cp-accent); }
+    .process-outcomes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+    .process-outcome { padding: .85rem 1rem; border: 1px solid var(--cp-border); border-left: .25rem solid var(--cp-accent); border-radius: .625rem; background: var(--cp-surface-soft); }
+    .process-outcome strong { display: block; font-size: .9rem; }
+    .process-outcome p { margin: .25rem 0 0; color: var(--cp-text-soft); font-size: .82rem; }
+    .process-label { display: block; margin-bottom: .25rem; color: var(--cp-accent); font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    .guardrails { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+    .guardrails span { padding: .4rem .65rem; border: 1px solid var(--cp-border); border-radius: .625rem; color: var(--cp-text-soft); font-size: .8rem; }
+    .tile p, .sequence-item p { margin: 0; color: var(--cp-text-soft); font-size: .9rem; }
+    .footnote { margin: 1.5rem 0 0; color: var(--cp-text-soft); font-size: .9rem; }
+    .tile { padding: 1.15rem; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-bg-elevated); }
+    .tile .number { margin-bottom: 1rem; }
+    .sequence { display: grid; gap: 1rem; margin: 0; padding: 0; list-style: none; }
+    .sequence-item { position: relative; display: grid; grid-template-columns: 2rem 1fr; gap: .85rem; padding: 1rem; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-surface); }
+    .sequence-item:not(:last-child)::after { content: "\2193"; position: absolute; bottom: -1.15rem; left: 1.65rem; z-index: 1; color: var(--cp-accent); font-weight: 700; line-height: 1; }
+    .callout { margin: 1.25rem 0 0; padding: .9rem 1rem; border-left: .25rem solid var(--cp-accent); border-radius: .625rem; background: var(--cp-accent-soft); font-size: .92rem; }
+    .query { margin: 0; padding: 1rem; overflow-x: auto; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-surface); font-size: .8rem; line-height: 1.65; }
+    .query code { overflow-wrap: normal; }
+    .bullet-list { margin: 1.5rem 0 0; padding-left: 1.2rem; }
+    .bullet-list li + li { margin-top: .6rem; }
+    .next-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin: 2rem 0; }
+    .next-steps .tile { min-height: 10rem; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; padding: .65rem 1rem; border: 1px solid var(--cp-accent); border-radius: .625rem; background: var(--cp-accent); color: var(--cp-accent-fg); font: inherit; font-size: .9rem; font-weight: 700; text-decoration: none; cursor: pointer; }
+    .button:hover { border-color: var(--cp-accent-hover); background: var(--cp-accent-hover); color: var(--cp-accent-fg); }
+    .button.secondary { border-color: var(--cp-border-strong); background: var(--cp-surface); color: var(--cp-text); }
+    .button.secondary:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
+    .button:disabled { opacity: .5; cursor: not-allowed; }
+    .controls { display: grid; grid-template-columns: auto minmax(8rem, 1fr) auto; gap: 1rem; align-items: center; margin-top: 1.25rem; }
+    .controls[hidden] { display: none; }
+    .progress-wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .75rem; align-items: center; }
+    progress { width: 100%; height: .4rem; overflow: hidden; border: 0; border-radius: .625rem; background: var(--cp-border); accent-color: var(--cp-accent); }
+    progress::-webkit-progress-bar { background: var(--cp-border); }
+    progress::-webkit-progress-value { background: var(--cp-accent); }
+    progress::-moz-progress-bar { background: var(--cp-accent); }
+    .counter { color: var(--cp-text-soft); font-size: .8rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .hint { margin: .85rem 0 0; color: var(--cp-text-soft); font-size: .8rem; text-align: center; }
+    .noscript-note { color: var(--cp-text-soft); }
+    @media (max-width: 980px) {
+      .architecture-grid { grid-template-columns: minmax(0, 1fr); }
+      .architecture-grid > .diagram-arrow { min-height: 1rem; transform: rotate(90deg); }
+      .architecture-sources { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 850px) {
+      .slide-layout { grid-template-columns: minmax(0, 1fr); }
+      .slide { min-height: 0; }
+    }
+    @media (max-width: 600px) {
+      .wrap { width: min(100% - 2rem, 76rem); }
+      .deck { padding-top: 1.25rem; }
+      .deck-header p { display: none; }
+      .slide { padding: 1.5rem; }
+      h2 { font-size: clamp(2.2rem, 10vw, 3.2rem); }
+      .next-steps, .process-steps, .process-outcomes { grid-template-columns: 1fr; }
+      .process-steps { gap: 1rem; }
+      .process-steps li:not(:last-child)::after { content: "\2193"; top: auto; right: auto; bottom: -1.15rem; left: 1.65rem; transform: none; line-height: 1; }
+      .process-fork { display: none; }
+      .process-outcomes { margin-top: 1rem; }
+      .next-steps .tile { min-height: 0; }
+      .controls { gap: .5rem; grid-template-columns: auto minmax(3rem, 1fr) auto; }
+      .progress-wrap { grid-template-columns: 1fr; gap: .25rem; text-align: center; }
+      .controls .button { padding-inline: .75rem; }
+    }
+    @media (max-width: 420px) {
+      .architecture-sources, .architecture-path { grid-template-columns: minmax(0, 1fr); }
+      .architecture-path > .diagram-arrow { min-height: 1rem; transform: rotate(90deg); }
+    }
+    @media print {
+      .site-header, .deck-header, .controls, .hint, .noscript-note { display: none !important; }
+      .wrap { width: 100%; }
+      .deck { padding: 0; }
+      .slide, .slide[hidden] { display: grid; min-height: 95vh; border: 0; box-shadow: none; break-after: page; }
+      .slide:last-of-type { break-after: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">G</span><span>GHAS <span aria-hidden="true">&rarr;</span> Sentinel</span></a>
+      <a class="back-link" href="index.html">&larr; Project guide</a>
+    </div>
+  </header>
+  <main class="wrap deck">
+    <h1 class="sr-only">GHAS to Sentinel presentation</h1>
+    <div class="deck-header"><strong>Project presentation</strong><p>Azure DevOps Advanced Security &rarr; Microsoft Sentinel</p></div>
+    <noscript><p class="noscript-note">JavaScript is off, so all slides are shown in sequence.</p></noscript>
+    <div id="slides">
+      <section class="slide" id="slide-1" role="group" aria-roledescription="slide" aria-label="1 of 7">
+        <div class="slide-layout">
+          <div>
+            <p class="kicker">Azure DevOps &rarr; Microsoft Sentinel</p>
+            <h2>Security signals. <em>One story.</em></h2>
+            <p class="intro">A practical path from Advanced Security alerts to a shared Sentinel investigation view.</p>
+            <div class="tag-row"><span class="tag">Event driven</span><span class="tag">Privacy aware</span><span class="tag">Built for triage</span></div>
+          </div>
+          <div class="visual">
+            <p class="visual-label">The event route</p>
+            <ol class="route">
+              <li><span class="number">01</span> Azure DevOps</li>
+              <li><span class="number">02</span> Service Bus</li>
+              <li><span class="number">03</span> Azure Function</li>
+              <li><span class="number">04</span> Microsoft Sentinel</li>
+            </ol>
+            <p class="visual-foot">A queue connects delivery, processing, and investigation.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-2" role="group" aria-roledescription="slide" aria-label="2 of 7">
+        <div class="slide-layout">
+          <div>
+            <p class="kicker">The purpose</p>
+            <h2>A clearer place to <em>investigate.</em></h2>
+            <p class="intro">Normalize alert events into an existing Sentinel workspace so teams can investigate them alongside their security data.</p>
+          </div>
+          <div class="visual">
+            <p class="visual-label">What this project provides</p>
+            <div class="stats">
+              <div class="stat"><strong>3</strong><span>service-hook events: created, state changed, and updated</span></div>
+              <div class="stat"><strong>1</strong><span>custom alert table and a Sentinel workbook for triage</span></div>
+              <div class="stat"><strong>+</strong><span>active-alert backfill and an optional secret-alert rule</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide diagram-slide" id="slide-3" role="group" aria-roledescription="slide" aria-label="3 of 7">
+        <div>
+          <p class="kicker">Architecture</p>
+          <h2>From alerts to <em>investigation.</em></h2>
+          <p class="intro">Live events and active-alert backfill share one path into Microsoft Sentinel.</p>
+          <figure class="architecture">
+            <div class="architecture-grid">
+              <section class="architecture-group" aria-labelledby="sources-title">
+                <h3 id="sources-title">Azure DevOps &amp; backfill</h3>
+                <div class="architecture-sources">
+                  <div class="diagram-node">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v12H4zM4 8l8 5 8-5M8 20h8"/></svg>
+                    <strong>Service hooks</strong><small>Live alert events</small>
+                  </div>
+                  <div class="diagram-node">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5v5h5M5 10a7 7 0 1 1 1 6M12 8v4l3 2"/></svg>
+                    <strong>Backfill</strong><small>Active alerts via API</small>
+                  </div>
+                </div>
+              </section>
+              <span class="diagram-arrow" aria-hidden="true">&rarr;</span>
+              <section class="architecture-group" aria-labelledby="application-title">
+                <h3 id="application-title">Application resources</h3>
+                <div class="architecture-path">
+                  <div class="diagram-node">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M8 14h2M8 17h2"/></svg>
+                    <strong>Service Bus</strong><small>ghas queue</small>
+                  </div>
+                  <span class="diagram-arrow" aria-hidden="true">&rarr;</span>
+                  <div class="diagram-node">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 5 13h6l-1 9 9-12h-6z"/></svg>
+                    <strong>Azure Function</strong><small>Normalize + upload</small>
+                  </div>
+                </div>
+                <p class="architecture-output">Managed identity &middot; retries / dead letters</p>
+              </section>
+              <span class="diagram-arrow" aria-hidden="true">&rarr;</span>
+              <section class="architecture-group" aria-labelledby="workspace-title">
+                <h3 id="workspace-title">Sentinel workspace resources</h3>
+                <div class="architecture-path">
+                  <div class="diagram-node">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg>
+                    <strong>Direct DCR</strong><small>Logs Ingestion API</small>
+                  </div>
+                  <span class="diagram-arrow" aria-hidden="true">&rarr;</span>
+                  <div class="diagram-node">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></svg>
+                    <strong>Log Analytics</strong><small>GHASAlerts_CL</small>
+                  </div>
+                </div>
+                <p class="architecture-output"><span aria-hidden="true">&darr;</span> Sentinel workbook &middot; optional analytics rule</p>
+              </section>
+            </div>
+            <figcaption>Both sources send to the queue; the Function publishes through the DCR to the workspace table used by Sentinel. <a href="architecture.excalidraw" download>Download the editable diagram</a>.</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="slide diagram-slide" id="slide-4" role="group" aria-roledescription="slide" aria-label="4 of 7">
+        <div>
+          <p class="kicker">Processing flow &amp; resilience</p>
+          <h2>Deliver, retry, <em>investigate.</em></h2>
+          <p class="intro">Every queued event follows the same processing path, with explicit outcomes for success and failure.</p>
+          <figure class="processing">
+            <ol class="process-steps">
+              <li><span class="number" aria-hidden="true">01</span><strong>Receive</strong><small>Service Bus ghas queue</small></li>
+              <li><span class="number" aria-hidden="true">02</span><strong>Normalize</strong><small>Apply privacy settings</small></li>
+              <li><span class="number" aria-hidden="true">03</span><strong>Upload</strong><small>Logs Ingestion API / DCR</small></li>
+            </ol>
+            <svg class="process-fork" viewBox="0 0 100 32" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M50 0v8H25v19M83 0v8H50M83 8v4H75v15M23 23l2 4 2-4M73 23l2 4 2-4"/></svg>
+            <div class="process-outcomes">
+              <div class="process-outcome"><span class="process-label"><span aria-hidden="true">&rdsh; </span>Parsing or upload failure</span><strong>Retry &rarr; dead-letter queue</strong><p>Failures are retried; the delivery limit can move the message to the DLQ.</p></div>
+              <div class="process-outcome"><span class="process-label"><span aria-hidden="true">&rdsh; </span>Success</span><strong>Complete the message</strong><p>A successful Function invocation allows the host to complete it.</p></div>
+            </div>
+            <figcaption>Delivery is at least once. An upload can be repeated after a failure; deduplicate records by <code>EventId</code>.</figcaption>
+          </figure>
+          <div class="guardrails">
+            <span>Managed identity: storage + queue receive + DCR publish</span>
+            <span>Raw events and locations excluded by default</span>
+            <span>Service-hook send: queue SAS or service connection</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-5" role="group" aria-roledescription="slide" aria-label="5 of 7">
+        <div class="slide-layout">
+          <div>
+            <p class="kicker">Initial load</p>
+            <h2>Start with the <em>active picture.</em></h2>
+            <p class="intro">A separate backfill utility seeds the same processing path with currently active alerts for one Azure DevOps project.</p>
+            <p class="callout">Delivery is at least once. Use <code>EventId</code> to deduplicate when querying.</p>
+          </div>
+          <div class="visual">
+            <p class="visual-label">Backfill sequence</p>
+            <ol class="sequence">
+              <li class="sequence-item"><span class="number" aria-hidden="true">01</span><div><h3>Discover repositories</h3><p>List repositories in the selected project.</p></div></li>
+              <li class="sequence-item"><span class="number" aria-hidden="true">02</span><div><h3>Page active alerts</h3><p>Follow continuation tokens; omit closed and dismissed alerts.</p></div></li>
+              <li class="sequence-item"><span class="number" aria-hidden="true">03</span><div><h3>Prepare initial events</h3><p>Build selected alert fields and deterministic event IDs.</p></div></li>
+              <li class="sequence-item"><span class="number" aria-hidden="true">04</span><div><h3>Send to the ghas queue</h3><p>The same Function processes the initial-load events.</p></div></li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-6" role="group" aria-roledescription="slide" aria-label="6 of 7">
+        <div class="slide-layout">
+          <div>
+            <p class="kicker">Investigation</p>
+            <h2>Turn records into <em>useful context.</em></h2>
+            <p class="intro">The workbook focuses on alert triage, with operational panels available when needed.</p>
+            <ul class="bullet-list">
+              <li>Review the latest event by repository, alert, and branch.</li>
+              <li>Optionally create incidents for new or backfilled active secret alerts.</li>
+              <li>Inspect Function traces and queue health when processing fails.</li>
+            </ul>
+          </div>
+          <div class="visual">
+            <p class="visual-label">A deduplicated starting point</p>
+            <pre class="query" tabindex="0" role="region" aria-label="Deduplicated alert query"><code>GHASAlerts_CL
+| where TimeGenerated &gt; ago(7d)
+| summarize arg_max(TimeGenerated, *) by EventId
+| project TimeGenerated, RepositoryName,
+          Severity, State, AlertUrl</code></pre>
+            <p class="visual-foot">Query example &middot; Log Analytics / Sentinel</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" id="slide-7" role="group" aria-roledescription="slide" aria-label="7 of 7">
+        <div>
+          <p class="kicker">Next steps</p>
+          <h2>Deploy <em>deliberately.</em></h2>
+          <p class="intro">Choose the target, provision only with authorization, then connect and operate the integration.</p>
+          <div class="next-steps">
+            <article class="tile"><span class="number">01</span><h3>Choose targets</h3><p>Identify the application subscription and existing Sentinel workspace.</p></article>
+            <article class="tile"><span class="number">02</span><h3>Provision</h3><p>Review permissions and configuration, then run <code>azd up</code> when approved.</p></article>
+            <article class="tile"><span class="number">03</span><h3>Connect and monitor</h3><p>Set up service hooks, optionally backfill active alerts, and watch queue health.</p></article>
+          </div>
+          <a class="button" href="index.html#deploy">Read the deployment guide <span aria-hidden="true">&rarr;</span></a>
+          <p class="footnote">This presentation is static; viewing it makes no Azure or Azure DevOps changes.</p>
+        </div>
+      </section>
+    </div>
+
+    <nav class="controls" id="controls" aria-label="Presentation controls" hidden>
+      <button class="button secondary" id="previous" type="button">Previous</button>
+      <div class="progress-wrap">
+        <progress id="progress" max="7" value="1" aria-label="Presentation progress"></progress>
+        <span class="counter" id="counter">01 / 07</span>
+      </div>
+      <button class="button" id="next" type="button">Next</button>
+    </nav>
+    <p class="hint" id="hint" hidden>Use the left and right arrow keys to navigate.</p>
+    <div class="sr-only" id="announcement" aria-live="polite" aria-atomic="true"></div>
+  </main>
+  <script>
+    (() => {
+      const slides = Array.from(document.querySelectorAll("#slides .slide"));
+      const controls = document.getElementById("controls");
+      const previous = document.getElementById("previous");
+      const next = document.getElementById("next");
+      const progress = document.getElementById("progress");
+      const counter = document.getElementById("counter");
+      const hint = document.getElementById("hint");
+      const announcement = document.getElementById("announcement");
+
+      if (!slides.length || !controls || !previous || !next || !progress || !counter || !hint || !announcement) {
+        throw new Error("Presentation markup is incomplete.");
+      }
+
+      let current = 0;
+      const indexFromHash = () => {
+        const match = /^#slide-(\d+)$/.exec(window.location.hash);
+        return match ? Math.min(slides.length - 1, Math.max(0, Number(match[1]) - 1)) : 0;
+      };
+      const showSlide = (index, { updateHash = true, reveal = false } = {}) => {
+        current = Math.min(slides.length - 1, Math.max(0, index));
+        slides.forEach((slide, position) => { slide.hidden = position !== current; });
+        previous.disabled = current === 0;
+        next.disabled = current === slides.length - 1;
+        progress.max = slides.length;
+        progress.value = current + 1;
+        counter.textContent = `${String(current + 1).padStart(2, "0")} / ${String(slides.length).padStart(2, "0")}`;
+        const title = slides[current].querySelector("h2");
+        announcement.textContent = `Slide ${current + 1} of ${slides.length}: ${title ? title.textContent.trim() : ""}`;
+        const hash = `#${slides[current].id}`;
+        if (updateHash && window.location.hash !== hash) {
+          window.history.replaceState(null, "", hash);
+        }
+        if (reveal && title) {
+          const bounds = title.getBoundingClientRect();
+          if (bounds.top < 0 || bounds.bottom > window.innerHeight) {
+            slides[current].scrollIntoView({ block: "start", behavior: "auto" });
+          }
+        }
+      };
+
+      previous.addEventListener("click", () => showSlide(current - 1, { reveal: true }));
+      next.addEventListener("click", () => showSlide(current + 1, { reveal: true }));
+      document.addEventListener("keydown", (event) => {
+        const target = event.target;
+        if (event.altKey || event.ctrlKey || event.metaKey ||
+            (target instanceof HTMLElement && (target.isContentEditable || target.closest("pre") || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)))) {
+          return;
+        }
+        if (event.key === "ArrowRight" || event.key === "PageDown") {
+          event.preventDefault();
+          showSlide(current + 1, { reveal: true });
+        } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
+          event.preventDefault();
+          showSlide(current - 1, { reveal: true });
+        }
+      });
+      window.addEventListener("hashchange", () => showSlide(indexFromHash(), { updateHash: false, reveal: true }));
+      controls.hidden = false;
+      hint.hidden = false;
+      showSlide(indexFromHash());
+    })();
+  </script>
+</body>
+</html>
