@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How events move from Azure DevOps to Sentinel, and the boundaries between components.">
+  <title>Architecture | GHAS to Sentinel</title>
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">G</span><span>GHAS <span aria-hidden="true">&rarr;</span> Sentinel</span></a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a class="nav-section" href="architecture.html" aria-current="page">Architecture</a>
+        <a class="nav-section" href="getting-started.html">Get started</a>
+        <a class="nav-cta" href="presentation.html">Presentation <span aria-hidden="true">&rarr;</span></a>
+      </nav>
+    </div>
+  </header>
+  <main id="content" class="wrap layout">
+      <nav class="sidebar" aria-label="Documentation">
+        <strong>Documentation</strong>
+        <a href="architecture.html" aria-current="page"><span>01</span>Architecture</a>
+        <a href="getting-started.html"><span>02</span>Getting started</a>
+        <a href="service-hooks.html"><span>03</span>Service hooks</a>
+        <a href="backfill.html"><span>04</span>Active-alert backfill</a>
+        <a href="operations.html"><span>05</span>Operations</a>
+        <a href="reference.html"><span>06</span>Project map</a>
+      </nav>
+      <div>
+          <p class="section-label">01 / Documentation</p>
+          <h1 class="page-title">Architecture</h1>
+
+          <section class="content-section" id="overview">
+            <h2>A shared view of security alerts</h2>
+            <p class="lead">This integration forwards events from GitHub Advanced Security for Azure DevOps to Microsoft Sentinel. It does not configure Advanced Security in Azure DevOps or activate a GitHub repository's security features.</p>
+            <div class="cards">
+              <article class="card"><span class="card-index">01</span><h3>Stream changes</h3><p>Created, state-changed, and updated alert events enter a Service Bus queue.</p></article>
+              <article class="card"><span class="card-index">02</span><h3>Seed active alerts</h3><p>A separate backfill utility pages through currently active alerts in one Azure DevOps project.</p></article>
+              <article class="card"><span class="card-index">03</span><h3>Investigate in Sentinel</h3><p>Use a custom table and workbook, with an optional scheduled rule for active secret alerts.</p></article>
+            </div>
+            <div class="note"><strong>Delivery is at least once.</strong> The Logs Ingestion API does not guarantee exactly-once writes. Deduplicate by <code>EventId</code> when querying.</div>
+          </section>
+          <section class="content-section" id="components">
+            <h2>Small components, clear boundaries</h2>
+            <p class="lead">A queue separates event delivery from normalization and ingestion. The application resources and existing workspace can be in different resource groups or subscriptions.</p>
+            <ol class="steps">
+              <li><strong>Publish</strong><span>Azure DevOps service hooks send alert events to the <code>ghas</code> queue using a queue-scoped Send SAS credential or a service connection.</span></li>
+              <li><strong>Process</strong><span>A .NET isolated Azure Function reads the queue, normalizes each event, and uses a user-assigned managed identity.</span></li>
+              <li><strong>Ingest</strong><span>The Logs Ingestion API sends records through a direct data collection rule (DCR) to <code>GHASAlerts_CL</code>.</span></li>
+              <li><strong>Investigate</strong><span>A Sentinel workbook presents alert triage. An optional hourly rule creates incidents for new or backfilled active secret alerts.</span></li>
+            </ol>
+            <p>Failed parsing or ingestion causes the Function invocation to fail so Service Bus can retry and eventually dead-letter the message. The workbook's operational panels are opt-in.</p>
+            <p>See the diagrams in the <a href="presentation.html#slide-3">architecture</a> and <a href="presentation.html#slide-4">processing flow</a> slides, or <a href="architecture.excalidraw" download>download the editable diagram</a>.</p>
+          </section>
+          <nav class="pager" aria-label="Page navigation"><a class="prev" href="index.html"><small>Previous</small><strong>&larr; Home</strong></a><a class="next" href="getting-started.html"><small>Next</small><strong>Getting started &rarr;</strong></a></nav>
+      </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-inner"><p>GHAS to Sentinel &middot; Project documentation</p><p><a href="index.html">Home</a> &nbsp; / &nbsp; <a href="presentation.html">Presentation</a></p></div>
+  </footer>
+</body>
+</html>

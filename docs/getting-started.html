@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Prerequisites and the azd deployment of application and workspace resources.">
+  <title>Getting started | GHAS to Sentinel</title>
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">G</span><span>GHAS <span aria-hidden="true">&rarr;</span> Sentinel</span></a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a class="nav-section" href="architecture.html">Architecture</a>
+        <a class="nav-section" href="getting-started.html" aria-current="page">Get started</a>
+        <a class="nav-cta" href="presentation.html">Presentation <span aria-hidden="true">&rarr;</span></a>
+      </nav>
+    </div>
+  </header>
+  <main id="content" class="wrap layout">
+      <nav class="sidebar" aria-label="Documentation">
+        <strong>Documentation</strong>
+        <a href="architecture.html"><span>01</span>Architecture</a>
+        <a href="getting-started.html" aria-current="page"><span>02</span>Getting started</a>
+        <a href="service-hooks.html"><span>03</span>Service hooks</a>
+        <a href="backfill.html"><span>04</span>Active-alert backfill</a>
+        <a href="operations.html"><span>05</span>Operations</a>
+        <a href="reference.html"><span>06</span>Project map</a>
+      </nav>
+      <div>
+          <p class="section-label">02 / Documentation</p>
+          <h1 class="page-title">Getting started</h1>
+
+          <section class="content-section" id="prerequisites">
+            <h2>Before you begin</h2>
+            <ul>
+              <li>An existing Sentinel-enabled Log Analytics workspace and the subscription, resource group, name, and region that identify it.</li>
+              <li>Azure DevOps Advanced Security enabled for the relevant repositories and permission to administer project service hooks.</li>
+              <li>.NET 10 SDK, Azure Functions Core Tools v4, Azure CLI, and Azure Developer CLI (<code>azd</code>).</li>
+              <li>Permission to create app resources and role assignments, plus permission to create the table, DCR, workbook, and optional analytics rule in the workspace resource group.</li>
+              <li>An Azure DevOps token with appropriate service-hook and Advanced Security access; keep it out of source control and logs.</li>
+            </ul>
+            <div class="note"><strong>Deployment boundary:</strong> The commands below create or modify Azure and Azure DevOps resources only when an operator runs them. Confirm your subscription, regions, permissions, and organization policy first.</div>
+          </section>
+          <section class="content-section" id="deploy">
+            <h2>Provision the integration</h2>
+            <p class="lead">Create an azd environment and provide both the application target and the existing workspace coordinates. The DCR is deployed in the workspace region.</p>
+            <pre tabindex="0" role="region" aria-label="Azure Developer CLI environment configuration"><code>azd env new dev
+azd env set AZURE_SUBSCRIPTION_ID &lt;application-subscription-id&gt;
+azd env set AZURE_LOCATION &lt;application-region&gt;
+azd env set SENTINEL_WORKSPACE_SUBSCRIPTION_ID &lt;workspace-subscription-id&gt;
+azd env set SENTINEL_WORKSPACE_RESOURCE_GROUP &lt;workspace-resource-group&gt;
+azd env set SENTINEL_WORKSPACE_NAME &lt;workspace-name&gt;
+azd env set SENTINEL_WORKSPACE_REGION &lt;workspace-region&gt;
+azd env set ENABLE_ANALYTICS_RULE true</code></pre>
+            <p>Set <code>ENABLE_ANALYTICS_RULE</code> explicitly to <code>true</code> or <code>false</code>. After reviewing the target and deployment, an authorized operator can provision the infrastructure and deploy the Function:</p>
+            <pre><code>azd up</code></pre>
+            <p>The Bicep entry point orchestrates identity, storage, monitoring, Service Bus, Function, and Key Vault modules. A separate cross-resource-group module configures the existing workspace. The deploying identity needs the necessary access in both subscriptions when they differ.</p>
+          </section>
+          <nav class="pager" aria-label="Page navigation"><a class="prev" href="architecture.html"><small>Previous</small><strong>&larr; Architecture</strong></a><a class="next" href="service-hooks.html"><small>Next</small><strong>Service hooks &rarr;</strong></a></nav>
+      </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-inner"><p>GHAS to Sentinel &middot; Project documentation</p><p><a href="index.html">Home</a> &nbsp; / &nbsp; <a href="presentation.html">Presentation</a></p></div>
+  </footer>
+</body>
+</html>

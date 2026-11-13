@@ -247,6 +247,23 @@
       .architecture-sources, .architecture-path { grid-template-columns: minmax(0, 1fr); }
       .architecture-path > .diagram-arrow { min-height: 1rem; transform: rotate(90deg); }
     }
+    .controls-actions { display: flex; gap: .5rem; }
+    .icon-button { min-width: 2.75rem; padding-inline: .7rem; }
+    .icon-button svg { width: 1.1rem; height: 1.1rem; }
+    /* Presenter mode: a fixed 16:9 stage scaled to fill the screen. */
+    body.presenting { overflow: hidden; background: var(--cp-surface); }
+    body.presenting.idle { cursor: none; }
+    .presenting .site-header, .presenting .deck-header, .presenting .hint, .presenting .noscript-note { display: none; }
+    .presenting .deck { position: fixed; inset: 0; width: 100%; margin: 0; padding: 0; }
+    .presenting #slides { position: absolute; top: 50%; left: 50%; width: 1280px; height: 720px; transform: translate(-50%, -50%) scale(var(--stage-scale, 1)); }
+    .presenting .slide { height: 100%; min-height: 0; padding: 56px 72px; overflow: hidden; border: 0; border-radius: 0; box-shadow: none; }
+    .presenting h2 { font-size: 64px; }
+    .presenting .diagram-slide h2 { font-size: 50px; }
+    .presenting .intro { font-size: 19px; }
+    .presenting .slide-layout { grid-template-columns: minmax(0, 1fr) minmax(18rem, .9fr); }
+    .presenting .controls { position: fixed; left: 50%; bottom: 1rem; z-index: 5; width: min(46rem, calc(100vw - 2rem)); margin: 0; padding: .6rem .75rem; border: 1px solid var(--cp-border); border-radius: .75rem; background: var(--cp-surface); box-shadow: 0 8px 24px rgba(0, 0, 0, .18); transform: translateX(-50%); transition: opacity .2s; }
+    .presenting.idle .controls:not(:focus-within) { opacity: 0; pointer-events: none; }
+    @media (prefers-reduced-motion: reduce) { .presenting .controls { transition: none; } }
     @media print {
       .site-header, .deck-header, .controls, .hint, .noscript-note { display: none !important; }
       .wrap { width: 100%; }
@@ -445,7 +462,7 @@
             <article class="tile"><span class="number">02</span><h3>Provision</h3><p>Review permissions and configuration, then run <code>azd up</code> when approved.</p></article>
             <article class="tile"><span class="number">03</span><h3>Connect and monitor</h3><p>Set up service hooks, optionally backfill active alerts, and watch queue health.</p></article>
           </div>
-          <a class="button" href="index.html#deploy">Read the deployment guide <span aria-hidden="true">&rarr;</span></a>
+          <a class="button" href="getting-started.html#deploy">Read the deployment guide <span aria-hidden="true">&rarr;</span></a>
           <p class="footnote">This presentation is static; viewing it makes no Azure or Azure DevOps changes.</p>
         </div>
       </section>
@@ -457,9 +474,15 @@
         <progress id="progress" max="7" value="1" aria-label="Presentation progress"></progress>
         <span class="counter" id="counter">01 / 07</span>
       </div>
-      <button class="button" id="next" type="button">Next</button>
+      <div class="controls-actions">
+        <button class="button" id="next" type="button">Next</button>
+        <button class="button secondary icon-button" id="present" type="button" aria-pressed="false" title="Present full screen (F)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+          <span class="sr-only" id="present-label">Present full screen</span>
+        </button>
+      </div>
     </nav>
-    <p class="hint" id="hint" hidden>Use the left and right arrow keys to navigate.</p>
+    <p class="hint" id="hint" hidden>Press <kbd>F</kbd> to present full screen. Use the arrow keys or Space to navigate; <kbd>Esc</kbd> exits.</p>
     <div class="sr-only" id="announcement" aria-live="polite" aria-atomic="true"></div>
   </main>
   <script>
@@ -504,20 +527,78 @@
         }
       };
 
+      const present = document.getElementById("present");
+      const presentLabel = document.getElementById("present-label");
+      const stage = document.getElementById("slides");
+      let idleTimer;
+      const isPresenting = () => document.body.classList.contains("presenting");
+      const fitStage = () => {
+        const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+        stage.style.setProperty("--stage-scale", String(scale));
+      };
+      const wake = () => {
+        document.body.classList.remove("idle");
+        clearTimeout(idleTimer);
+        if (isPresenting()) {
+          idleTimer = setTimeout(() => document.body.classList.add("idle"), 2500);
+        }
+      };
+      const setPresenting = (on) => {
+        document.body.classList.toggle("presenting", on);
+        present.setAttribute("aria-pressed", String(on));
+        presentLabel.textContent = on ? "Exit full screen" : "Present full screen";
+        present.title = on ? "Exit full screen (Esc)" : "Present full screen (F)";
+        if (on) { fitStage(); }
+        wake();
+      };
+      const togglePresenting = () => {
+        const on = !isPresenting();
+        if (document.fullscreenEnabled) {
+          if (on) {
+            document.documentElement.requestFullscreen().catch(() => setPresenting(true));
+          } else if (document.fullscreenElement) {
+            document.exitFullscreen();
+          } else {
+            setPresenting(false);
+          }
+        } else {
+          setPresenting(on);
+        }
+      };
+      document.addEventListener("fullscreenchange", () => setPresenting(Boolean(document.fullscreenElement)));
+      window.addEventListener("resize", () => { if (isPresenting()) { fitStage(); } });
+      document.addEventListener("mousemove", wake);
+      stage.addEventListener("click", (event) => {
+        if (!isPresenting() || (event.target instanceof Element && event.target.closest("a, button, pre, summary"))) {
+          return;
+        }
+        showSlide(current + 1);
+      });
+
       previous.addEventListener("click", () => showSlide(current - 1, { reveal: true }));
       next.addEventListener("click", () => showSlide(current + 1, { reveal: true }));
+      present.addEventListener("click", togglePresenting);
       document.addEventListener("keydown", (event) => {
         const target = event.target;
         if (event.altKey || event.ctrlKey || event.metaKey ||
             (target instanceof HTMLElement && (target.isContentEditable || target.closest("pre") || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)))) {
           return;
         }
-        if (event.key === "ArrowRight" || event.key === "PageDown") {
+        const onButton = target instanceof HTMLElement && target.closest("button, a");
+        if (event.key === "ArrowRight" || event.key === "PageDown" || (event.key === " " && !onButton)) {
           event.preventDefault();
           showSlide(current + 1, { reveal: true });
         } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
           event.preventDefault();
           showSlide(current - 1, { reveal: true });
+        } else if (event.key === "Home" || event.key === "End") {
+          event.preventDefault();
+          showSlide(event.key === "Home" ? 0 : slides.length - 1, { reveal: true });
+        } else if (event.key === "f" || event.key === "F") {
+          event.preventDefault();
+          togglePresenting();
+        } else if (event.key === "Escape" && isPresenting() && !document.fullscreenElement) {
+          setPresenting(false);
         }
       });
       window.addEventListener("hashchange", () => showSlide(indexFromHash(), { updateHash: false, reveal: true }));

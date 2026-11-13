@@ -5,238 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A practical guide to forwarding Azure DevOps Advanced Security alerts to Microsoft Sentinel.">
   <title>GHAS to Sentinel | Project guide</title>
-  <script>
-    (() => {
-      const param = new URLSearchParams(window.location.search).get("scoutTheme");
-      const theme =
-        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-      document.documentElement.setAttribute("data-theme", theme);
-    })();
-  </script>
-  <style>
-    :root {
-      color-scheme: light;
-      --cp-bg: #f7f4ef;
-      --cp-bg-elevated: #fcfbf8;
-      --cp-surface: #ffffff;
-      --cp-surface-soft: #f5f5f5;
-      --cp-border: #dedede;
-      --cp-border-strong: #919191;
-      --cp-text: #242424;
-      --cp-text-muted: #5c5c5c;
-      --cp-text-soft: #6f6f6f;
-      --cp-accent: #b11f4b;
-      --cp-accent-hover: #9a1a41;
-      --cp-accent-soft: rgba(177, 31, 75, 0.08);
-      --cp-accent-fg: #ffffff;
-      --cp-success: #16a34a;
-      --cp-danger: #dc2626;
-      --cp-warning: #f59e0b;
-      --cp-link: #0078d4;
-      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
-      --cp-overlay: rgba(255, 255, 255, 0.8);
-      --cp-panel: rgba(255, 255, 255, 0.86);
-      --cp-panel-strong: rgba(255, 255, 255, 0.96);
-      --cp-sheen: rgba(255, 255, 255, 0.55);
-      --cp-highlight: rgba(177, 31, 75, 0.12);
-    }
-    html[data-theme="dark"] {
-      color-scheme: dark;
-      --cp-bg: #3d3b3a;
-      --cp-bg-elevated: #343231;
-      --cp-surface: #292929;
-      --cp-surface-soft: #2e2e2e;
-      --cp-border: #474747;
-      --cp-border-strong: #5f5f5f;
-      --cp-text: #dedede;
-      --cp-text-muted: #919191;
-      --cp-text-soft: #b0b0b0;
-      --cp-accent: #fd8ea1;
-      --cp-accent-hover: #fb7b91;
-      --cp-accent-soft: rgba(253, 142, 161, 0.14);
-      --cp-accent-fg: #1a1a1a;
-      --cp-success: #4ade80;
-      --cp-danger: #f87171;
-      --cp-warning: #fbbf24;
-      --cp-link: #4da6ff;
-      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
-      --cp-overlay: rgba(41, 41, 41, 0.88);
-      --cp-panel: rgba(41, 41, 41, 0.72);
-      --cp-panel-strong: rgba(41, 41, 41, 0.96);
-      --cp-sheen: rgba(255, 255, 255, 0.04);
-      --cp-highlight: rgba(253, 142, 161, 0.12);
-    }
-    /* Azure DevOps-inspired colors, with accessible light and dark variants. */
-    :root {
-      --cp-bg: #f3f6fa;
-      --cp-bg-elevated: #f9fbfd;
-      --cp-surface: #ffffff;
-      --cp-surface-soft: #edf3f8;
-      --cp-border: #d5e0e9;
-      --cp-border-strong: #8397a7;
-      --cp-text: #1b2533;
-      --cp-text-muted: #526170;
-      --cp-text-soft: #536271;
-      --cp-accent: #0067b8;
-      --cp-accent-hover: #005a9e;
-      --cp-accent-soft: rgba(0, 120, 212, 0.1);
-      --cp-accent-fg: #ffffff;
-      --cp-link: #0067b8;
-      --cp-highlight: rgba(0, 120, 212, 0.12);
-    }
-    html[data-theme="dark"] {
-      --cp-bg: #111a24;
-      --cp-bg-elevated: #172534;
-      --cp-surface: #1b2b3c;
-      --cp-surface-soft: #142231;
-      --cp-border: #3a526a;
-      --cp-border-strong: #7690a8;
-      --cp-text: #edf5fc;
-      --cp-text-muted: #b6c8d8;
-      --cp-text-soft: #bdcddd;
-      --cp-accent: #66b9ff;
-      --cp-accent-hover: #90cdff;
-      --cp-accent-soft: rgba(0, 120, 212, 0.2);
-      --cp-accent-fg: #10283d;
-      --cp-link: #66b9ff;
-      --cp-highlight: rgba(102, 185, 255, 0.18);
-    }
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; scroll-padding-top: 2rem; }
-    body {
-      margin: 0;
-      background: var(--cp-bg);
-      color: var(--cp-text);
-      font: 1rem/1.6 "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    a { color: var(--cp-accent); text-decoration-thickness: 1px; text-underline-offset: .2em; }
-    a:hover { color: var(--cp-accent-hover); }
-    a:focus-visible, summary:focus-visible, pre:focus-visible, .table-wrap:focus-visible {
-      outline: 3px solid var(--cp-accent);
-      outline-offset: 4px;
-    }
-    code, pre { font-family: Consolas, "Courier New", Courier, monospace; }
-    code { font-size: .92em; overflow-wrap: anywhere; }
-    pre code { font-size: inherit; overflow-wrap: normal; }
-    .skip-link {
-      position: absolute;
-      top: .5rem;
-      left: .5rem;
-      z-index: 10;
-      padding: .5rem .75rem;
-      background: var(--cp-surface);
-      transform: translateY(-200%);
-    }
-    .skip-link:focus { transform: translateY(0); }
-    .wrap { width: min(100% - 3rem, 76rem); margin: 0 auto; }
-    .site-header { border-bottom: 1px solid var(--cp-border); background: var(--cp-bg-elevated); }
-    .header-inner { min-height: 4.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-    .brand { display: inline-flex; align-items: center; gap: .75rem; color: var(--cp-text); font-weight: 700; text-decoration: none; white-space: nowrap; }
-    .brand:hover { color: var(--cp-text); }
-    .brand-mark {
-      display: grid;
-      place-items: center;
-      width: 2rem;
-      height: 2rem;
-      border-radius: .625rem;
-      background: var(--cp-accent);
-      color: var(--cp-accent-fg);
-      font-size: .85rem;
-    }
-    .site-nav { display: flex; align-items: center; gap: 1.5rem; }
-    .site-nav a { color: var(--cp-text); font-size: .9rem; font-weight: 600; text-decoration: none; }
-    .site-nav a:hover { color: var(--cp-accent); }
-    .site-nav .nav-cta { color: var(--cp-accent); }
-    .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(19rem, .9fr); gap: clamp(2.5rem, 6vw, 6rem); align-items: center; padding: 5rem 0; }
-    .eyebrow { display: inline-flex; align-items: center; gap: .5rem; color: var(--cp-accent); font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-    .eyebrow::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--cp-accent); }
-    h1, h2, h3, p { margin-top: 0; }
-    h1 { margin: 1.2rem 0; max-width: 12ch; font-size: clamp(2.8rem, 5.3vw, 5rem); line-height: 1.03; letter-spacing: -.045em; }
-    h1 em { color: var(--cp-accent); font-style: normal; }
-    .hero-copy { max-width: 36rem; color: var(--cp-text-soft); font-size: 1.1rem; }
-    .hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.75rem; }
-    .button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.8rem; padding: .65rem 1rem; border: 1px solid var(--cp-accent); border-radius: .625rem; background: var(--cp-accent); color: var(--cp-accent-fg); font-weight: 700; text-decoration: none; }
-    .button:hover { border-color: var(--cp-accent-hover); background: var(--cp-accent-hover); color: var(--cp-accent-fg); }
-    .button.secondary { border-color: var(--cp-border-strong); background: var(--cp-surface); color: var(--cp-text); }
-    .button.secondary:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
-    .hero-note { margin: 1.25rem 0 0; color: var(--cp-text-soft); font-size: .85rem; }
-    .route-card { padding: 1.5rem; border: 1px solid var(--cp-border); border-radius: 1rem; background: var(--cp-surface); box-shadow: 0 1px 2px var(--cp-border); }
-    .card-label { color: var(--cp-text-soft); font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-    .route-card h2 { margin: .25rem 0 1.25rem; font-size: 1.25rem; letter-spacing: -.02em; }
-    .route { margin: 0; padding: 0; list-style: none; }
-    .route li { display: flex; gap: .875rem; align-items: flex-start; padding: .75rem 0; border-top: 1px solid var(--cp-border); }
-    .route-number { flex: 0 0 2rem; display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: .625rem; background: var(--cp-accent-soft); color: var(--cp-accent); font-size: .72rem; font-weight: 700; }
-    .route strong, .route span:last-child { display: block; }
-    .route span:last-child { color: var(--cp-text-soft); font-size: .85rem; }
-    .route-foot { margin: .75rem 0 0; padding: .75rem; border-radius: .625rem; background: var(--cp-surface-soft); color: var(--cp-text-soft); font-size: .82rem; }
-    .layout { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: clamp(2rem, 5vw, 5rem); align-items: start; padding-bottom: 5rem; }
-    .layout > div { min-width: 0; }
-    .toc { position: sticky; top: 2rem; display: grid; gap: .5rem; padding-top: 1.5rem; }
-    .toc strong { margin-bottom: .35rem; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; }
-    .toc a { width: fit-content; color: var(--cp-text-soft); font-size: .9rem; text-decoration: none; }
-    .toc a:hover { color: var(--cp-accent); }
-    .content-section { padding: 2rem 0 3rem; border-top: 1px solid var(--cp-border); }
-    .section-label { margin-bottom: .4rem; color: var(--cp-accent); font-size: .75rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-    .content-section h2 { margin-bottom: .75rem; font-size: clamp(1.9rem, 3vw, 2.6rem); line-height: 1.15; letter-spacing: -.035em; }
-    .content-section h3 { margin-bottom: .4rem; font-size: 1.05rem; line-height: 1.3; }
-    .lead { max-width: 45rem; color: var(--cp-text-soft); font-size: 1.05rem; }
-    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin: 1.5rem 0; }
-    .cards.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .card { padding: 1.2rem; border: 1px solid var(--cp-border); border-radius: 1rem; background: var(--cp-surface); }
-    .card p { margin-bottom: 0; color: var(--cp-text-soft); font-size: .92rem; }
-    .card-index { display: inline-grid; place-items: center; width: 2rem; height: 2rem; margin-bottom: 1rem; border-radius: .625rem; background: var(--cp-accent-soft); color: var(--cp-accent); font-size: .75rem; font-weight: 700; }
-    .note { margin: 1.5rem 0; padding: 1rem 1.2rem; border: 1px solid var(--cp-border); border-left: .25rem solid var(--cp-accent); border-radius: .625rem; background: var(--cp-bg-elevated); }
-    .note p:last-child { margin-bottom: 0; }
-    .steps { display: grid; gap: .75rem; margin: 1.5rem 0; padding: 0; list-style: none; counter-reset: steps; }
-    .steps li { position: relative; padding: .85rem 1rem .85rem 3.75rem; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-surface); counter-increment: steps; }
-    .steps li::before { content: counter(steps, decimal-leading-zero); position: absolute; left: 1rem; color: var(--cp-accent); font-weight: 700; }
-    .steps strong { display: block; }
-    .steps span { color: var(--cp-text-soft); font-size: .92rem; }
-    ul { padding-left: 1.3rem; }
-    li + li { margin-top: .35rem; }
-    pre { max-width: 100%; margin: 1rem 0 1.5rem; padding: 1rem 1.1rem; overflow-x: auto; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-surface-soft); color: var(--cp-text); font-size: .82rem; line-height: 1.6; }
-    details { margin: .75rem 0; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-surface); }
-    summary { padding: .9rem 1rem; cursor: pointer; font-weight: 700; }
-    details > div { padding: 0 1rem 1rem; }
-    details pre { margin-bottom: .5rem; }
-    .table-wrap { overflow-x: auto; margin: 1.5rem 0; border: 1px solid var(--cp-border); border-radius: .625rem; background: var(--cp-surface); }
-    table { width: 100%; border-collapse: collapse; text-align: left; }
-    th, td { padding: .8rem 1rem; border-bottom: 1px solid var(--cp-border); vertical-align: top; }
-    th { color: var(--cp-text-soft); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
-    tr:last-child td { border-bottom: 0; }
-    .site-footer { padding: 2rem 0; border-top: 1px solid var(--cp-border); background: var(--cp-bg-elevated); }
-    .footer-inner { display: flex; justify-content: space-between; gap: 1rem; color: var(--cp-text-soft); font-size: .85rem; }
-    .footer-inner p { margin: 0; }
-    @media (max-width: 900px) {
-      .hero { grid-template-columns: 1fr; gap: 2rem; padding: 3.5rem 0; }
-      .route-card { max-width: 36rem; }
-      .layout { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
-      .toc { position: static; display: flex; flex-wrap: wrap; gap: .5rem 1rem; padding: 1rem 0; }
-      .toc strong { flex-basis: 100%; }
-    }
-    @media (max-width: 600px) {
-      .wrap { width: min(100% - 2rem, 76rem); }
-      .site-nav .nav-section { display: none; }
-      .hero { padding: 2.75rem 0; }
-      .cards, .cards.two { grid-template-columns: 1fr; }
-      .footer-inner { flex-direction: column; }
-    }
-    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-  </style>
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-  <a class="skip-link" href="#content">Skip to documentation</a>
+  <a class="skip-link" href="#content">Skip to content</a>
   <header class="site-header">
     <div class="wrap header-inner">
       <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">G</span><span>GHAS <span aria-hidden="true">&rarr;</span> Sentinel</span></a>
       <nav class="site-nav" aria-label="Main navigation">
-        <a class="nav-section" href="#architecture">Architecture</a>
-        <a class="nav-section" href="#deploy">Deploy</a>
+        <a class="nav-section" href="architecture.html">Architecture</a>
+        <a class="nav-section" href="getting-started.html">Get started</a>
         <a class="nav-cta" href="presentation.html">Presentation <span aria-hidden="true">&rarr;</span></a>
       </nav>
     </div>
   </header>
-
   <main id="content" class="wrap">
     <section class="hero" aria-labelledby="hero-title">
       <div>
@@ -244,7 +27,7 @@
         <h1 id="hero-title">Security signals. <em>One place to investigate.</em></h1>
         <p class="hero-copy">Bring Azure DevOps Advanced Security alert events into an existing Sentinel workspace, with a durable queue, a privacy-aware processor, and an operator-ready workbook.</p>
         <div class="hero-actions">
-          <a class="button" href="#deploy">Read the deployment guide <span aria-hidden="true">&rarr;</span></a>
+          <a class="button" href="getting-started.html">Get started <span aria-hidden="true">&rarr;</span></a>
           <a class="button secondary" href="presentation.html">Open the presentation</a>
         </div>
         <p class="hero-note">Project guide &middot; Static site &middot; No resources change when you view it</p>
@@ -261,170 +44,21 @@
         <p class="route-foot">Active-alert backfill can seed the same queue.</p>
       </aside>
     </section>
-
-    <div class="layout">
-      <nav class="toc" aria-label="On this page">
-        <strong>On this page</strong>
-        <a href="#overview">Overview</a>
-        <a href="#architecture">Architecture</a>
-        <a href="#prerequisites">Prerequisites</a>
-        <a href="#deploy">Deploy</a>
-        <a href="#service-hooks">Service hooks</a>
-        <a href="#backfill">Active-alert backfill</a>
-        <a href="#operations">Operate and investigate</a>
-        <a href="#project-map">Project map</a>
-        <a href="#publish">Publish this site</a>
-      </nav>
-      <div>
-        <section class="content-section" id="overview">
-          <p class="section-label">01 / Overview</p>
-          <h2>A shared view of security alerts</h2>
-          <p class="lead">This integration forwards events from GitHub Advanced Security for Azure DevOps to Microsoft Sentinel. It does not configure Advanced Security in Azure DevOps or activate a GitHub repository's security features.</p>
-          <div class="cards">
-            <article class="card"><span class="card-index">01</span><h3>Stream changes</h3><p>Created, state-changed, and updated alert events enter a Service Bus queue.</p></article>
-            <article class="card"><span class="card-index">02</span><h3>Seed active alerts</h3><p>A separate backfill utility pages through currently active alerts in one Azure DevOps project.</p></article>
-            <article class="card"><span class="card-index">03</span><h3>Investigate in Sentinel</h3><p>Use a custom table and workbook, with an optional scheduled rule for active secret alerts.</p></article>
-          </div>
-          <div class="note"><strong>Delivery is at least once.</strong> The Logs Ingestion API does not guarantee exactly-once writes. Deduplicate by <code>EventId</code> when querying.</div>
-        </section>
-
-        <section class="content-section" id="architecture">
-          <p class="section-label">02 / Architecture</p>
-          <h2>Small components, clear boundaries</h2>
-          <p class="lead">A queue separates event delivery from normalization and ingestion. The application resources and existing workspace can be in different resource groups or subscriptions.</p>
-          <ol class="steps">
-            <li><strong>Publish</strong><span>Azure DevOps service hooks send alert events to the <code>ghas</code> queue using a queue-scoped Send SAS credential or a service connection.</span></li>
-            <li><strong>Process</strong><span>A .NET isolated Azure Function reads the queue, normalizes each event, and uses a user-assigned managed identity.</span></li>
-            <li><strong>Ingest</strong><span>The Logs Ingestion API sends records through a direct data collection rule (DCR) to <code>GHASAlerts_CL</code>.</span></li>
-            <li><strong>Investigate</strong><span>A Sentinel workbook presents alert triage. An optional hourly rule creates incidents for new or backfilled active secret alerts.</span></li>
-          </ol>
-          <p>Failed parsing or ingestion causes the Function invocation to fail so Service Bus can retry and eventually dead-letter the message. The workbook's operational panels are opt-in.</p>
-        </section>
-
-        <section class="content-section" id="prerequisites">
-          <p class="section-label">03 / Prerequisites</p>
-          <h2>Before you begin</h2>
-          <ul>
-            <li>An existing Sentinel-enabled Log Analytics workspace and the subscription, resource group, name, and region that identify it.</li>
-            <li>Azure DevOps Advanced Security enabled for the relevant repositories and permission to administer project service hooks.</li>
-            <li>.NET 10 SDK, Azure Functions Core Tools v4, Azure CLI, and Azure Developer CLI (<code>azd</code>).</li>
-            <li>Permission to create app resources and role assignments, plus permission to create the table, DCR, workbook, and optional analytics rule in the workspace resource group.</li>
-            <li>An Azure DevOps token with appropriate service-hook and Advanced Security access; keep it out of source control and logs.</li>
-          </ul>
-          <div class="note"><strong>Deployment boundary:</strong> The commands below create or modify Azure and Azure DevOps resources only when an operator runs them. Confirm your subscription, regions, permissions, and organization policy first.</div>
-        </section>
-
-        <section class="content-section" id="deploy">
-          <p class="section-label">04 / Deployment</p>
-          <h2>Provision the integration</h2>
-          <p class="lead">Create an azd environment and provide both the application target and the existing workspace coordinates. The DCR is deployed in the workspace region.</p>
-          <pre tabindex="0" role="region" aria-label="Azure Developer CLI environment configuration"><code>azd env new dev
-azd env set AZURE_SUBSCRIPTION_ID &lt;application-subscription-id&gt;
-azd env set AZURE_LOCATION &lt;application-region&gt;
-azd env set SENTINEL_WORKSPACE_SUBSCRIPTION_ID &lt;workspace-subscription-id&gt;
-azd env set SENTINEL_WORKSPACE_RESOURCE_GROUP &lt;workspace-resource-group&gt;
-azd env set SENTINEL_WORKSPACE_NAME &lt;workspace-name&gt;
-azd env set SENTINEL_WORKSPACE_REGION &lt;workspace-region&gt;
-azd env set ENABLE_ANALYTICS_RULE true</code></pre>
-          <p>Set <code>ENABLE_ANALYTICS_RULE</code> explicitly to <code>true</code> or <code>false</code>. After reviewing the target and deployment, an authorized operator can provision the infrastructure and deploy the Function:</p>
-          <pre><code>azd up</code></pre>
-          <p>The Bicep entry point orchestrates identity, storage, monitoring, Service Bus, Function, and Key Vault modules. A separate cross-resource-group module configures the existing workspace. The deploying identity needs the necessary access in both subscriptions when they differ.</p>
-        </section>
-
-        <section class="content-section" id="service-hooks">
-          <p class="section-label">05 / Connect</p>
-          <h2>Configure Azure DevOps service hooks</h2>
-          <p class="lead">The script creates or recognizes project-scoped subscriptions for the three alert events. Existing matching subscriptions are not overwritten; a subscription targeting another queue causes the script to stop.</p>
-          <details>
-            <summary>Option A: queue-scoped Send SAS</summary>
-            <div>
-              <p>Sign in with Azure CLI and set the token in the current PowerShell process. The optional <code>-KeyVaultName</code> stores the queue-scoped credential in Key Vault and requires permission to set secrets.</p>
-              <pre tabindex="0" role="region" aria-label="SAS service-hook configuration"><code>$env:AZDO_ACCESS_TOKEN = '&lt;pat&gt;'
-.\scripts\New-GhasServiceHooks.ps1 `
-  -OrganizationUrl 'https://dev.azure.com/&lt;organization&gt;' `
-  -ProjectId '&lt;project-id&gt;' `
-  -NamespaceName '&lt;service-bus-namespace&gt;' `
-  -QueueName 'ghas' `
-  -ResourceGroup '&lt;application-resource-group&gt;' `
-  -AuthenticationMode Sas</code></pre>
-            </div>
-          </details>
-          <details>
-            <summary>Option B: Azure Resource Manager service connection</summary>
-            <div>
-              <p>Grant the service connection's principal the Azure Service Bus Data Sender role on the namespace or queue. A service connection configured for workload identity federation can be used.</p>
-              <pre tabindex="0" role="region" aria-label="Service connection hook configuration"><code>$env:AZDO_ACCESS_TOKEN = '&lt;pat&gt;'
-.\scripts\New-GhasServiceHooks.ps1 `
-  -OrganizationUrl 'https://dev.azure.com/&lt;organization&gt;' `
-  -ProjectId '&lt;project-id&gt;' `
-  -NamespaceName '&lt;service-bus-namespace&gt;' `
-  -QueueName 'ghas' `
-  -AuthenticationMode ServiceConnection `
-  -ServiceConnectionId '&lt;service-connection-id&gt;'</code></pre>
-            </div>
-          </details>
-        </section>
-
-        <section class="content-section" id="backfill">
-          <p class="section-label">06 / Initial load</p>
-          <h2>Backfill active alerts</h2>
-          <p class="lead">The backfill utility lists project repositories, follows alert continuation tokens, and enqueues returned alerts whose state is <code>Active</code>. Closed and dismissed alerts are not imported.</p>
-          <pre tabindex="0" role="region" aria-label="Backfill configuration"><code>$env:AZDO_ORG_URL = 'https://dev.azure.com/&lt;organization&gt;'
-$env:AZDO_PROJECT_ID = '&lt;project-id&gt;'
-$env:AZDO_ACCESS_TOKEN = '&lt;pat&gt;'
-$env:SERVICEBUS_FULLY_QUALIFIED_NAMESPACE = '&lt;namespace&gt;.servicebus.windows.net'
-$env:SERVICEBUS_QUEUE_NAME = 'ghas'
-dotnet run --project .\src\Ghas.Sentinel.Backfill</code></pre>
-          <p>The backfill uses <code>DefaultAzureCredential</code>. The selected Azure identity needs Azure Service Bus Data Sender on the queue, and the Azure DevOps token needs access to list repositories and Advanced Security alerts. Initial-load events use deterministic IDs.</p>
-        </section>
-
-        <section class="content-section" id="operations">
-          <p class="section-label">07 / Operations</p>
-          <h2>Keep the signal useful</h2>
-          <div class="cards two">
-            <article class="card"><h3>Privacy by default</h3><p>Raw events and physical and logical locations are excluded by default. Backfill selects an allowlist of top-level alert fields.</p></article>
-            <article class="card"><h3>Least-privilege paths</h3><p>The Function uses managed identity for storage, queue receive, and DCR publishing. Sending is separately authorized by SAS or a service connection.</p></article>
-            <article class="card"><h3>Watch the queue</h3><p>Inspect dead-letter messages, Service Bus metrics, and Function traces. Enable operational panels in the workbook when needed.</p></article>
-            <article class="card"><h3>Deduplicate queries</h3><p>Use <code>EventId</code> to account for retries. The workbook shows the latest event by repository, alert, and branch.</p></article>
-          </div>
-          <p>For a simple deduplicated view in Log Analytics:</p>
-          <pre tabindex="0" role="region" aria-label="Deduplicated alert query"><code>GHASAlerts_CL
-| where TimeGenerated &gt; ago(7d)
-| summarize arg_max(TimeGenerated, *) by EventId
-| project TimeGenerated, ProjectName, RepositoryName, Severity, State, AlertUrl
-| order by TimeGenerated desc</code></pre>
-        </section>
-
-        <section class="content-section" id="project-map">
-          <p class="section-label">08 / Project map</p>
-          <h2>Where things live</h2>
-          <div class="table-wrap" tabindex="0" role="region" aria-label="Project file map">
-            <table>
-              <thead><tr><th scope="col">Path</th><th scope="col">Responsibility</th></tr></thead>
-              <tbody>
-                <tr><td><code>src/Ghas.Sentinel.Function</code></td><td>Queue-triggered Function and Logs Ingestion client.</td></tr>
-                <tr><td><code>src/Ghas.Sentinel.Core</code></td><td>Normalization, record schema, and initial-load envelope.</td></tr>
-                <tr><td><code>src/Ghas.Sentinel.Backfill</code></td><td>Active-alert backfill command-line tool.</td></tr>
-                <tr><td><code>infra/</code></td><td>Bicep orchestrator, component modules, workspace resources, and role assignments.</td></tr>
-                <tr><td><code>scripts/</code></td><td>Azure DevOps service-hook setup.</td></tr>
-                <tr><td><code>sentinel/</code></td><td>Workbook definition and analytics-rule query.</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="content-section" id="publish">
-          <p class="section-label">09 / GitHub Pages</p>
-          <h2>Publish this guide</h2>
-          <p>Push the repository to GitHub, then select <strong>Settings &gt; Pages &gt; Build and deployment &gt; Source &gt; GitHub Actions</strong>. The <strong>Deploy documentation</strong> workflow publishes only the <code>docs/</code> directory from the default branch. Run it manually from that branch if the files were pushed before Pages was enabled.</p>
-          <p>Find the deployed URL in the workflow deployment or Pages settings. Review site visibility and publish only non-sensitive information.</p>
-          <a class="button secondary" href="presentation.html">Explore the presentation <span aria-hidden="true">&rarr;</span></a>
-        </section>
-      </div>
-    </div>
+    <section class="home-section" aria-labelledby="docs-title">
+      <h2 id="docs-title">Explore the documentation</h2>
+      <p class="lead">Start with the architecture, then follow the guides in order to deploy, connect, and operate the integration.</p>
+      <ul class="doc-links">
+          <li><a class="doc-link" href="architecture.html"><strong>Architecture</strong><span>How events move from Azure DevOps to Sentinel, and the boundaries between components.</span></a></li>
+          <li><a class="doc-link" href="getting-started.html"><strong>Getting started</strong><span>Prerequisites and the azd deployment of application and workspace resources.</span></a></li>
+          <li><a class="doc-link" href="service-hooks.html"><strong>Service hooks</strong><span>Connect Azure DevOps Advanced Security events to the queue with SAS or a service connection.</span></a></li>
+          <li><a class="doc-link" href="backfill.html"><strong>Active-alert backfill</strong><span>Seed Sentinel with alerts that are already active in a project.</span></a></li>
+          <li><a class="doc-link" href="operations.html"><strong>Operations</strong><span>Privacy defaults, least-privilege access, queue health, and deduplicated queries.</span></a></li>
+          <li><a class="doc-link" href="reference.html"><strong>Project map</strong><span>Where each part of the solution lives in the repository.</span></a></li>
+      </ul>
+    </section>
   </main>
   <footer class="site-footer">
-    <div class="wrap footer-inner"><p>GHAS to Sentinel &middot; Project documentation</p><p><a href="#content">Back to top</a> &nbsp; / &nbsp; <a href="presentation.html">Presentation</a></p></div>
+    <div class="wrap footer-inner"><p>GHAS to Sentinel &middot; Project documentation</p><p><a href="index.html">Home</a> &nbsp; / &nbsp; <a href="presentation.html">Presentation</a></p></div>
   </footer>
 </body>
 </html>

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Privacy defaults, least-privilege access, queue health, and deduplicated queries.">
+  <title>Operations | GHAS to Sentinel</title>
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">G</span><span>GHAS <span aria-hidden="true">&rarr;</span> Sentinel</span></a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a class="nav-section" href="architecture.html">Architecture</a>
+        <a class="nav-section" href="getting-started.html">Get started</a>
+        <a class="nav-cta" href="presentation.html">Presentation <span aria-hidden="true">&rarr;</span></a>
+      </nav>
+    </div>
+  </header>
+  <main id="content" class="wrap layout">
+      <nav class="sidebar" aria-label="Documentation">
+        <strong>Documentation</strong>
+        <a href="architecture.html"><span>01</span>Architecture</a>
+        <a href="getting-started.html"><span>02</span>Getting started</a>
+        <a href="service-hooks.html"><span>03</span>Service hooks</a>
+        <a href="backfill.html"><span>04</span>Active-alert backfill</a>
+        <a href="operations.html" aria-current="page"><span>05</span>Operations</a>
+        <a href="reference.html"><span>06</span>Project map</a>
+      </nav>
+      <div>
+          <p class="section-label">05 / Documentation</p>
+          <h1 class="page-title">Operations</h1>
+
+          <section class="content-section" id="operations">
+            <h2>Keep the signal useful</h2>
+            <div class="cards two">
+              <article class="card"><h3>Privacy by default</h3><p>Raw events and physical and logical locations are excluded by default. Backfill selects an allowlist of top-level alert fields.</p></article>
+              <article class="card"><h3>Least-privilege paths</h3><p>The Function uses managed identity for storage, queue receive, and DCR publishing. Sending is separately authorized by SAS or a service connection.</p></article>
+              <article class="card"><h3>Watch the queue</h3><p>Inspect dead-letter messages, Service Bus metrics, and Function traces. Enable operational panels in the workbook when needed.</p></article>
+              <article class="card"><h3>Deduplicate queries</h3><p>Use <code>EventId</code> to account for retries. The workbook shows the latest event by repository, alert, and branch.</p></article>
+            </div>
+          </section>
+          <section class="content-section" id="query">
+            <h2>A deduplicated starting query</h2>
+            <pre tabindex="0" role="region" aria-label="Deduplicated alert query"><code>GHASAlerts_CL
+| where TimeGenerated &gt; ago(7d)
+| summarize arg_max(TimeGenerated, *) by EventId
+| project TimeGenerated, ProjectName, RepositoryName, Severity, State, AlertUrl
+| order by TimeGenerated desc</code></pre>
+          </section>
+          <nav class="pager" aria-label="Page navigation"><a class="prev" href="backfill.html"><small>Previous</small><strong>&larr; Active-alert backfill</strong></a><a class="next" href="reference.html"><small>Next</small><strong>Project map &rarr;</strong></a></nav>
+      </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-inner"><p>GHAS to Sentinel &middot; Project documentation</p><p><a href="index.html">Home</a> &nbsp; / &nbsp; <a href="presentation.html">Presentation</a></p></div>
+  </footer>
+</body>
+</html>

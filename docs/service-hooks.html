@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Connect Azure DevOps Advanced Security events to the queue with SAS or a service connection.">
+  <title>Service hooks | GHAS to Sentinel</title>
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">G</span><span>GHAS <span aria-hidden="true">&rarr;</span> Sentinel</span></a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a class="nav-section" href="architecture.html">Architecture</a>
+        <a class="nav-section" href="getting-started.html">Get started</a>
+        <a class="nav-cta" href="presentation.html">Presentation <span aria-hidden="true">&rarr;</span></a>
+      </nav>
+    </div>
+  </header>
+  <main id="content" class="wrap layout">
+      <nav class="sidebar" aria-label="Documentation">
+        <strong>Documentation</strong>
+        <a href="architecture.html"><span>01</span>Architecture</a>
+        <a href="getting-started.html"><span>02</span>Getting started</a>
+        <a href="service-hooks.html" aria-current="page"><span>03</span>Service hooks</a>
+        <a href="backfill.html"><span>04</span>Active-alert backfill</a>
+        <a href="operations.html"><span>05</span>Operations</a>
+        <a href="reference.html"><span>06</span>Project map</a>
+      </nav>
+      <div>
+          <p class="section-label">03 / Documentation</p>
+          <h1 class="page-title">Service hooks</h1>
+
+          <section class="content-section" id="service-hooks">
+            <h2>Configure Azure DevOps service hooks</h2>
+            <p class="lead">The script creates or recognizes project-scoped subscriptions for the three alert events. Existing matching subscriptions are not overwritten; a subscription targeting another queue causes the script to stop.</p>
+            <details open>
+              <summary>Option A: queue-scoped Send SAS</summary>
+              <div>
+                <p>Sign in with Azure CLI and set the token in the current PowerShell process. The optional <code>-KeyVaultName</code> stores the queue-scoped credential in Key Vault and requires permission to set secrets.</p>
+                <pre tabindex="0" role="region" aria-label="SAS service-hook configuration"><code>$env:AZDO_ACCESS_TOKEN = '&lt;pat&gt;'
+.\scripts\New-GhasServiceHooks.ps1 `
+  -OrganizationUrl 'https://dev.azure.com/&lt;organization&gt;' `
+  -ProjectId '&lt;project-id&gt;' `
+  -NamespaceName '&lt;service-bus-namespace&gt;' `
+  -QueueName 'ghas' `
+  -ResourceGroup '&lt;application-resource-group&gt;' `
+  -AuthenticationMode Sas</code></pre>
+              </div>
+            </details>
+            <details>
+              <summary>Option B: Azure Resource Manager service connection</summary>
+              <div>
+                <p>Grant the service connection's principal the Azure Service Bus Data Sender role on the namespace or queue. A service connection configured for workload identity federation can be used.</p>
+                <pre tabindex="0" role="region" aria-label="Service connection hook configuration"><code>$env:AZDO_ACCESS_TOKEN = '&lt;pat&gt;'
+.\scripts\New-GhasServiceHooks.ps1 `
+  -OrganizationUrl 'https://dev.azure.com/&lt;organization&gt;' `
+  -ProjectId '&lt;project-id&gt;' `
+  -NamespaceName '&lt;service-bus-namespace&gt;' `
+  -QueueName 'ghas' `
+  -AuthenticationMode ServiceConnection `
+  -ServiceConnectionId '&lt;service-connection-id&gt;'</code></pre>
+              </div>
+            </details>
+          </section>
+          <nav class="pager" aria-label="Page navigation"><a class="prev" href="getting-started.html"><small>Previous</small><strong>&larr; Getting started</strong></a><a class="next" href="backfill.html"><small>Next</small><strong>Active-alert backfill &rarr;</strong></a></nav>
+      </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-inner"><p>GHAS to Sentinel &middot; Project documentation</p><p><a href="index.html">Home</a> &nbsp; / &nbsp; <a href="presentation.html">Presentation</a></p></div>
+  </footer>
+</body>
+</html>

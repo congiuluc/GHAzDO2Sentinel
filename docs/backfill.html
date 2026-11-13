@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Seed Sentinel with alerts that are already active in a project.">
+  <title>Active-alert backfill | GHAS to Sentinel</title>
+  <script src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+  <a class="skip-link" href="#content">Skip to content</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">G</span><span>GHAS <span aria-hidden="true">&rarr;</span> Sentinel</span></a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a class="nav-section" href="architecture.html">Architecture</a>
+        <a class="nav-section" href="getting-started.html">Get started</a>
+        <a class="nav-cta" href="presentation.html">Presentation <span aria-hidden="true">&rarr;</span></a>
+      </nav>
+    </div>
+  </header>
+  <main id="content" class="wrap layout">
+      <nav class="sidebar" aria-label="Documentation">
+        <strong>Documentation</strong>
+        <a href="architecture.html"><span>01</span>Architecture</a>
+        <a href="getting-started.html"><span>02</span>Getting started</a>
+        <a href="service-hooks.html"><span>03</span>Service hooks</a>
+        <a href="backfill.html" aria-current="page"><span>04</span>Active-alert backfill</a>
+        <a href="operations.html"><span>05</span>Operations</a>
+        <a href="reference.html"><span>06</span>Project map</a>
+      </nav>
+      <div>
+          <p class="section-label">04 / Documentation</p>
+          <h1 class="page-title">Active-alert backfill</h1>
+
+          <section class="content-section" id="backfill">
+            <h2>Backfill active alerts</h2>
+            <p class="lead">The backfill utility lists project repositories, follows alert continuation tokens, and enqueues returned alerts whose state is <code>Active</code>. Closed and dismissed alerts are not imported.</p>
+            <pre tabindex="0" role="region" aria-label="Backfill configuration"><code>$env:AZDO_ORG_URL = 'https://dev.azure.com/&lt;organization&gt;'
+$env:AZDO_PROJECT_ID = '&lt;project-id&gt;'
+$env:AZDO_ACCESS_TOKEN = '&lt;pat&gt;'
+$env:SERVICEBUS_FULLY_QUALIFIED_NAMESPACE = '&lt;namespace&gt;.servicebus.windows.net'
+$env:SERVICEBUS_QUEUE_NAME = 'ghas'
+dotnet run --project .\src\Ghas.Sentinel.Backfill</code></pre>
+            <p>The backfill uses <code>DefaultAzureCredential</code>. The selected Azure identity needs Azure Service Bus Data Sender on the queue, and the Azure DevOps token needs access to list repositories and Advanced Security alerts. Initial-load events use deterministic IDs.</p>
+          </section>
+          <nav class="pager" aria-label="Page navigation"><a class="prev" href="service-hooks.html"><small>Previous</small><strong>&larr; Service hooks</strong></a><a class="next" href="operations.html"><small>Next</small><strong>Operations &rarr;</strong></a></nav>
+      </div>
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-inner"><p>GHAS to Sentinel &middot; Project documentation</p><p><a href="index.html">Home</a> &nbsp; / &nbsp; <a href="presentation.html">Presentation</a></p></div>
+  </footer>
+</body>
+</html>

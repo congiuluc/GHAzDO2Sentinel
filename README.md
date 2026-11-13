@@ -125,7 +125,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ## Project documentation site
 
-The `docs/` directory contains the project guide and an interactive browser presentation with architecture and flow diagrams. An editable diagram is available in `docs/architecture.excalidraw`. To preview them locally, run `python -m http.server 8000 --directory .\docs` and open `http://localhost:8000/`. Stop the server with Ctrl+C.
+The `docs/` directory contains a multi-page documentation portal (shared styles in `docs/assets/`) and a browser presentation with architecture and flow diagrams. Press **F** in the presentation to present full screen; use the arrow keys or Space to navigate. An editable diagram is available in `docs/architecture.excalidraw`. To preview them locally, run `python -m http.server 8000 --directory .\docs` and open `http://localhost:8000/`. Stop the server with Ctrl+C.
 
 To publish the site, push the repository to GitHub and select **Settings > Pages > Build and deployment > Source > GitHub Actions**. The **Deploy documentation** workflow publishes only `docs/` when it changes on the default branch. If the initial push ran before Pages was enabled, run the workflow manually from that branch. Find the site URL in the workflow deployment or Pages settings. Publish only content appropriate for the site's visibility.
 
