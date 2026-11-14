@@ -184,6 +184,10 @@
     .diagram-slide { align-content: start; }
     .diagram-slide h2 { max-width: none; margin-bottom: .6rem; font-size: clamp(2rem, 3.8vw, 3.4rem); }
     .diagram-slide .intro { max-width: 58rem; font-size: 1rem; }
+    .infographic-slide { display: block; margin: 1rem 0 0; padding: 0; border: 0; background: none; box-shadow: none; }
+    .infographic-slide img { display: block; width: 100%; max-height: 62vh; height: auto; margin: 0 auto; object-fit: contain; border-radius: 1rem; background: #f7f9fc; box-shadow: 0 6px 20px rgba(0, 0, 0, .14); }
+    .infographic-slide figcaption { margin-top: .6rem; }
+    .presenting .infographic-slide img { width: auto; max-width: 100%; max-height: calc(100dvh - 300px); }
     .architecture, .processing { margin: 1.25rem 0 0; }
     .architecture-grid { display: grid; grid-template-columns: minmax(0, .95fr) 1.25rem minmax(0, 1.22fr) 1.25rem minmax(0, 1.32fr); gap: .4rem; align-items: stretch; }
     .architecture-group { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: .75rem; border: 1px solid var(--cp-border-strong); border-radius: .625rem; }
@@ -380,54 +384,8 @@
           <p class="kicker">Architecture</p>
           <h2>From alerts to <em>investigation.</em></h2>
           <p class="intro">Live events and active-alert backfill share one path into Microsoft Sentinel.</p>
-          <figure class="architecture">
-            <div class="architecture-grid">
-              <section class="architecture-group" aria-labelledby="sources-title">
-                <h3 id="sources-title">Azure DevOps &amp; backfill</h3>
-                <div class="architecture-sources">
-                  <div class="diagram-node">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v12H4zM4 8l8 5 8-5M8 20h8"/></svg>
-                    <strong>Service hooks</strong><small>Live alert events</small>
-                  </div>
-                  <div class="diagram-node">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5v5h5M5 10a7 7 0 1 1 1 6M12 8v4l3 2"/></svg>
-                    <strong>Backfill</strong><small>Active alerts via API</small>
-                  </div>
-                </div>
-              </section>
-              <span class="diagram-arrow" aria-hidden="true">&rarr;</span>
-              <section class="architecture-group" aria-labelledby="application-title">
-                <h3 id="application-title">Application resources</h3>
-                <div class="architecture-path">
-                  <div class="diagram-node">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M8 14h2M8 17h2"/></svg>
-                    <strong>Service Bus</strong><small>ghas queue</small>
-                  </div>
-                  <span class="diagram-arrow" aria-hidden="true">&rarr;</span>
-                  <div class="diagram-node">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 5 13h6l-1 9 9-12h-6z"/></svg>
-                    <strong>Azure Function</strong><small>Normalize + upload</small>
-                  </div>
-                </div>
-                <p class="architecture-output">Managed identity &middot; retries / dead letters</p>
-              </section>
-              <span class="diagram-arrow" aria-hidden="true">&rarr;</span>
-              <section class="architecture-group" aria-labelledby="workspace-title">
-                <h3 id="workspace-title">Sentinel workspace resources</h3>
-                <div class="architecture-path">
-                  <div class="diagram-node">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></svg>
-                    <strong>Direct DCR</strong><small>Logs Ingestion API</small>
-                  </div>
-                  <span class="diagram-arrow" aria-hidden="true">&rarr;</span>
-                  <div class="diagram-node">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"/></svg>
-                    <strong>Log Analytics</strong><small>GHASAlerts_CL</small>
-                  </div>
-                </div>
-                <p class="architecture-output"><span aria-hidden="true">&darr;</span> Sentinel workbook &middot; optional analytics rule</p>
-              </section>
-            </div>
+          <figure class="architecture infographic-slide">
+            <img src="assets/presentation-architecture.png" alt="Architecture: Azure DevOps service hooks (live alert events) and the backfill tool (active alerts via API) send to the Service Bus ghas queue. An Azure Function with a managed identity normalizes and uploads through the direct DCR and Logs Ingestion API to the GHASAlerts_CL table in Log Analytics, used by the Microsoft Sentinel workbook and the optional analytics rule." width="1536" height="703" decoding="async">
             <figcaption>Both sources send to the queue; the Function publishes through the DCR to the workspace table used by Sentinel. <a href="architecture.excalidraw" download>Download the editable diagram</a>.</figcaption>
           </figure>
         </div>
@@ -438,24 +396,10 @@
           <p class="kicker">Processing flow &amp; resilience</p>
           <h2>Deliver, retry, <em>investigate.</em></h2>
           <p class="intro">Every queued event follows the same processing path, with explicit outcomes for success and failure.</p>
-          <figure class="processing">
-            <ol class="process-steps">
-              <li><span class="number" aria-hidden="true">01</span><strong>Receive</strong><small>Service Bus ghas queue</small></li>
-              <li><span class="number" aria-hidden="true">02</span><strong>Normalize</strong><small>Apply privacy settings</small></li>
-              <li><span class="number" aria-hidden="true">03</span><strong>Upload</strong><small>Logs Ingestion API / DCR</small></li>
-            </ol>
-            <svg class="process-fork" viewBox="0 0 100 32" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M50 0v8H25v19M83 0v8H50M83 8v4H75v15M23 23l2 4 2-4M73 23l2 4 2-4"/></svg>
-            <div class="process-outcomes">
-              <div class="process-outcome"><span class="process-label"><span aria-hidden="true">&rdsh; </span>Parsing or upload failure</span><strong>Retry &rarr; dead-letter queue</strong><p>Failures are retried; the delivery limit can move the message to the DLQ.</p></div>
-              <div class="process-outcome"><span class="process-label"><span aria-hidden="true">&rdsh; </span>Success</span><strong>Complete the message</strong><p>A successful Function invocation allows the host to complete it.</p></div>
-            </div>
-            <figcaption>Delivery is at least once. An upload can be repeated after a failure; deduplicate records by <code>EventId</code>.</figcaption>
+          <figure class="processing infographic-slide">
+            <img src="assets/presentation-processing-flow.png" alt="Processing flow: 01 Receive from the Service Bus ghas queue, 02 Normalize with privacy settings, 03 Upload through the Logs Ingestion API and DCR. A parsing or upload failure is retried and can be moved to the dead-letter queue; success completes the message. The managed identity has storage, queue receive and DCR publish access; raw events and locations are excluded by default; delivery is at least once, so deduplicate by EventId." width="1493" height="900" loading="lazy" decoding="async">
+            <figcaption>Delivery is at least once. An upload can be repeated after a failure; deduplicate records by <code>EventId</code>. Service-hook send uses a queue SAS or a service connection.</figcaption>
           </figure>
-          <div class="guardrails">
-            <span>Managed identity: storage + queue receive + DCR publish</span>
-            <span>Raw events and locations excluded by default</span>
-            <span>Service-hook send: queue SAS or service connection</span>
-          </div>
         </div>
       </section>
 
