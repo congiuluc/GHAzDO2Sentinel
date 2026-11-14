@@ -52,6 +52,10 @@
           <section class="content-section" id="components">
             <h2>Small components, clear boundaries</h2>
             <p class="lead">A queue separates event delivery from normalization and ingestion. The application resources and existing workspace can be in different resource groups or subscriptions.</p>
+            <figure class="infographic">
+              <a href="assets/architecture-infographic.png"><img src="assets/architecture-infographic.png" alt="Infrastructure architecture: Azure DevOps Advanced Security and the backfill tool publish to a Service Bus queue; an Azure Function with managed identity, storage, Key Vault and Application Insights, optionally in a private spoke VNet, ingests through the Logs Ingestion API into the GHASAlerts_CL table used by the Sentinel workbook and analytics rule." width="1536" height="1024" loading="lazy" decoding="async"></a>
+              <figcaption>Final infrastructure architecture, including the optional private hub &amp; spoke integration.</figcaption>
+            </figure>
             <ol class="steps">
               <li><strong>Publish</strong><span>Azure DevOps service hooks send alert events to the <code>ghas</code> queue using a queue-scoped Send SAS credential or a service connection.</span></li>
               <li><strong>Process</strong><span>A .NET isolated Azure Function reads the queue, normalizes each event, and uses a user-assigned managed identity.</span></li>

@@ -215,3 +215,7 @@ tr:last-child td { border-bottom: 0; }
 }
 @media (hover: none) { .doc-link:hover { transform: none; } .copy-button { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .doc-link, .nav-toggle path { transition: none; } }
+
+.infographic { margin: 1.5rem 0; }
+.infographic img { display: block; width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); }
+.infographic figcaption { margin-top: 0.5rem; font-size: 0.875rem; opacity: 0.8; }

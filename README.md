@@ -6,6 +6,8 @@ The workspace is intentionally parameterized. No Azure resource or Azure DevOps 
 
 ## Architecture
 
+![Infrastructure architecture: Azure DevOps Advanced Security publishes to Service Bus, an Azure Function ingests through the Logs Ingestion API into GHASAlerts_CL in Microsoft Sentinel, with an optional private hub & spoke integration](docs/assets/architecture-infographic.png)
+
 1. Three Advanced Security service-hook events publish JSON to the `ghas` queue.
 2. The Function consumes the queue with a user-assigned managed identity and uploads normalized records to `GHASAlerts_CL`.
 3. `Ghas.Sentinel.Backfill` can page through active repository alerts and enqueue deterministic `InitialLoad` messages.
