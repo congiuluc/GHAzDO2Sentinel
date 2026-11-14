@@ -187,7 +187,14 @@
     .infographic-slide { display: block; margin: 1rem 0 0; padding: 0; border: 0; background: none; box-shadow: none; }
     .infographic-slide img { display: block; width: 100%; max-height: 62vh; height: auto; margin: 0 auto; object-fit: contain; border-radius: 1rem; background: #f7f9fc; box-shadow: 0 6px 20px rgba(0, 0, 0, .14); }
     .infographic-slide figcaption { margin-top: .6rem; }
-    .presenting .infographic-slide img { width: auto; max-width: 100%; max-height: calc(100dvh - 300px); }
+    .presenting .slide.diagram-slide { grid-template-rows: minmax(0, 1fr); align-content: stretch; padding: 36px 56px; }
+    .presenting .diagram-slide .kicker { margin-bottom: 8px; }
+    .presenting .slide.diagram-slide h2 { margin-bottom: 6px; font-size: 42px; }
+    .presenting .diagram-slide .intro { font-size: 17px; }
+    .presenting .diagram-slide > div { display: flex; flex-direction: column; min-height: 0; }
+    .presenting .infographic-slide { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; margin-top: 16px; }
+    .presenting .infographic-slide img { flex: 1 1 0; width: 100%; min-height: 0; max-height: none; object-fit: contain; background: none; box-shadow: none; }
+    .presenting .infographic-slide figcaption { flex: none; margin-top: 10px; font-size: 15px; }
     .architecture, .processing { margin: 1.25rem 0 0; }
     .architecture-grid { display: grid; grid-template-columns: minmax(0, .95fr) 1.25rem minmax(0, 1.22fr) 1.25rem minmax(0, 1.32fr); gap: .4rem; align-items: stretch; }
     .architecture-group { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: .75rem; border: 1px solid var(--cp-border-strong); border-radius: .625rem; }
