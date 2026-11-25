@@ -842,6 +842,77 @@ Ripeti lo script per ogni progetto Azure DevOps.
 | Avvio host fallito | Ruoli sullo storage e impostazioni `AzureWebJobsStorage__*` |
 | Messaggi in dead-letter | Application Insights > **Failures** per il motivo; correggi la causa e reinvia i messaggi |
 
+### 14.1 Test HTTP: invio di un messaggio simulando il service hook
+
+Puoi verificare la catena Service Bus > Function > Sentinel senza generare un alert reale. Invia alla coda, tramite l'API REST di Service Bus, lo stesso payload JSON che spedirebbe il service hook. Il record di test contiene dati fittizi: puoi riconoscerlo dal titolo `TEST - ...`.
+
+Richiede le variabili `$rg`, `$sb` e `$queue` delle sezioni precedenti. Per l'autenticazione hai due possibilità:
+
+- **SAS**: chiave del criterio `sendOnly` (§6.3);
+- **Entra ID**: il tuo utente deve avere **Azure Service Bus Data Sender** sulla coda.
+
+```powershell
+$eventId = "manual-test-$([guid]::NewGuid())"
+$alertId = Get-Random -Minimum 900000 -Maximum 999999
+$body = @{
+  id                 = $eventId
+  eventType          = 'ms.vss-alerts.alert-created-event'
+  createdDate        = (Get-Date).ToUniversalTime().ToString('o')
+  resourceContainers = @{
+    account = @{ baseUrl = 'https://dev.azure.com/contoso' }
+    project = @{ id = '00000000-0000-0000-0000-000000000001' }
+  }
+  resource           = @{
+    alertId       = $alertId
+    alertType     = 'secret'
+    severity      = 'high'
+    state         = 'active'
+    title         = 'TEST - simulated secret scanning alert'
+    repositoryUrl = 'https://dev.azure.com/contoso/Security/_git/app'
+    gitRef        = 'refs/heads/main'
+    tools         = @(@{ name = 'secret-scanner'; rules = @(@{ opaqueId = 'test-rule'; friendlyName = 'Test rule' }) })
+  }
+} | ConvertTo-Json -Depth 10
+
+$uri = "https://$sb.servicebus.windows.net/$queue/messages"
+
+# Opzione 1: token SAS dal criterio sendOnly
+$key = az servicebus queue authorization-rule keys list -g $rg --namespace-name $sb `
+  --queue-name $queue -n sendOnly --query primaryKey -o tsv
+$resource = [uri]::EscapeDataString("https://$sb.servicebus.windows.net/$queue".ToLowerInvariant())
+$expiry = [DateTimeOffset]::UtcNow.AddMinutes(10).ToUnixTimeSeconds()
+$hmac = [System.Security.Cryptography.HMACSHA256]::new([Text.Encoding]::UTF8.GetBytes($key))
+$signature = [uri]::EscapeDataString([Convert]::ToBase64String(
+  $hmac.ComputeHash([Text.Encoding]::UTF8.GetBytes("$resource`n$expiry"))))
+$auth = "SharedAccessSignature sr=$resource&sig=$signature&se=$expiry&skn=sendOnly"
+
+# Opzione 2: token Entra ID (sostituisce l'opzione 1)
+# $auth = "Bearer $(az account get-access-token --resource https://servicebus.azure.net --query accessToken -o tsv)"
+
+Invoke-RestMethod -Method Post -Uri $uri -Body $body -Headers @{
+  Authorization    = $auth
+  BrokerProperties = (@{ MessageId = $eventId } | ConvertTo-Json -Compress)
+} -ContentType 'application/json'
+```
+
+La risposta `201 Created` non restituisce contenuto. Se `Invoke-RestMethod` non mostra errori, il messaggio è stato accodato.
+
+- **`MessageId` univoco:** la coda ha il rilevamento dei duplicati attivo per 10 minuti, quindi rieseguendo lo script con lo stesso `MessageId` il messaggio verrebbe scartato. Lo script ne genera uno nuovo a ogni esecuzione.
+- **Altri eventi:** per simulare un cambio di stato, usa `eventType = 'ms.vss-alerts.alert-state-changed-event'` e `state = 'dismissed'` (o `fixed`) con lo stesso `alertId`.
+- **File `.http`:** in alternativa allo script usa [`tests/http/send-test-alert.http`](tests/http/send-test-alert.http) con l'estensione VS Code **REST Client** o con Visual Studio. Imposta `@namespace` e `@authorization` (il valore di `$auth` dello script, oppure `Bearer <token>`), quindi esegui **Send Request** su "Alert created" e, se vuoi, su "Alert state changed". `MessageId`, `id` e data vengono generati a ogni invio.
+
+Dopo alcuni minuti controlla il risultato:
+
+```kusto
+GHASAlerts_CL
+| where Title startswith "TEST - "
+| project TimeGenerated, EventId, EventAction, AlertId, Severity, State, RepositoryName
+```
+
+Se il messaggio finisce in dead-letter, consulta la tabella **Problemi comuni** qui sopra. A test concluso, i record fittizi restano nella tabella fino alla scadenza della retention; filtrali con `Title !startswith "TEST - "` nelle query, se necessario.
+
+> In modalità privata (§15) la chiamata deve partire da una rete che raggiunge l'endpoint privato di Service Bus, a meno che non sia attivo `allowPublicServiceBusAccess`.
+
 Per l'importazione iniziale degli alert attivi già esistenti vedi la sezione **Backfill active alerts** del [README](README.md#backfill-active-alerts): richiede l'esecuzione di un'utilità .NET e non è disponibile solo tramite interfaccia grafica.
 
 

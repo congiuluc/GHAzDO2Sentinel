@@ -1,0 +1,67 @@
+# Simulates the Azure DevOps Advanced Security service hook by sending a message
+# directly to the Service Bus queue (REST Client for VS Code or Visual Studio .http).
+# Records contain fictitious data and are identifiable by the "TEST - " title prefix.
+#
+# Authorization (set @authorization):
+#   - SAS:      SharedAccessSignature sr=...&sig=...&se=...&skn=sendOnly  (see MANUAL_SETUP.md §14.1)
+#   - Entra ID: Bearer <token>  from  az account get-access-token --resource https://servicebus.azure.net --query accessToken -o tsv
+#               (requires Azure Service Bus Data Sender on the queue)
+# A 201 Created response with an empty body means the message was enqueued.
+
+@namespace = <service-bus-namespace>
+@queue = ghas
+@authorization = <SharedAccessSignature ... | Bearer ...>
+@alertId = 950001
+@repositoryUrl = https://dev.azure.com/contoso/Security/_git/app
+
+### Alert created
+POST https://{{namespace}}.servicebus.windows.net/{{queue}}/messages
+Authorization: {{authorization}}
+Content-Type: application/json
+BrokerProperties: {"MessageId":"{{$guid}}"}
+
+{
+  "id": "manual-test-{{$guid}}",
+  "eventType": "ms.vss-alerts.alert-created-event",
+  "createdDate": "{{$datetime iso8601}}",
+  "resourceContainers": {
+    "account": { "baseUrl": "https://dev.azure.com/contoso" },
+    "project": { "id": "00000000-0000-0000-0000-000000000001" }
+  },
+  "resource": {
+    "alertId": {{alertId}},
+    "alertType": "secret",
+    "severity": "high",
+    "state": "active",
+    "title": "TEST - simulated secret scanning alert",
+    "repositoryUrl": "{{repositoryUrl}}",
+    "gitRef": "refs/heads/main",
+    "tools": [
+      { "name": "secret-scanner", "rules": [ { "opaqueId": "test-rule", "friendlyName": "Test rule" } ] }
+    ]
+  }
+}
+
+### Alert state changed (dismissed)
+POST https://{{namespace}}.servicebus.windows.net/{{queue}}/messages
+Authorization: {{authorization}}
+Content-Type: application/json
+BrokerProperties: {"MessageId":"{{$guid}}"}
+
+{
+  "id": "manual-test-{{$guid}}",
+  "eventType": "ms.vss-alerts.alert-state-changed-event",
+  "createdDate": "{{$datetime iso8601}}",
+  "resourceContainers": {
+    "account": { "baseUrl": "https://dev.azure.com/contoso" },
+    "project": { "id": "00000000-0000-0000-0000-000000000001" }
+  },
+  "resource": {
+    "alertId": {{alertId}},
+    "alertType": "secret",
+    "severity": "high",
+    "state": "dismissed",
+    "title": "TEST - simulated secret scanning alert",
+    "repositoryUrl": "{{repositoryUrl}}"
+  }
+}
