@@ -48,8 +48,10 @@ type privateDnsZones = {
   sites: string
 }
 
+// Declared inline (not as a named type) so azd keeps the "nullable" flag and does not prompt for it.
+@description('Optional existing hub-spoke integration. Null preserves the public deployment. Subnets, DNS zones and AMPLS must already exist.')
 @sealed()
-type privateNetworkConfiguration = {
+param privateNetwork {
   @minLength(1)
   functionIntegrationSubnetId: string
   @minLength(1)
@@ -59,10 +61,7 @@ type privateNetworkConfiguration = {
   privateDnsZoneResourceIds: privateDnsZones
   @description('Explicit exception for Azure DevOps Services hooks. Exposes the authenticated Service Bus public endpoint.')
   allowPublicServiceBusAccess: bool?
-}
-
-@description('Optional existing hub-spoke integration. Null preserves the public deployment. Subnets, DNS zones and AMPLS must already exist.')
-param privateNetwork privateNetworkConfiguration?
+}?
 
 var privateNetworkingEnabled = privateNetwork != null
 var suffix = toLower(uniqueString(subscription().subscriptionId, resourceGroup().id, environmentName))

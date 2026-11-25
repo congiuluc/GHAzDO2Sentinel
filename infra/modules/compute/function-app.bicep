@@ -65,8 +65,6 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
       AzureWebJobsStorage__accountName: storageAccountName
       AzureWebJobsStorage__credential: 'managedidentity'
       AzureWebJobsStorage__clientId: identityClientId
-      FUNCTIONS_EXTENSION_VERSION: '~4'
-      FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
       AzureCredentialMode: 'ManagedIdentity'
       ManagedIdentityClientId: identityClientId
       QueueName: queueName

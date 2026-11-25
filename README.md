@@ -61,6 +61,8 @@ Set this value explicitly to `true` or `false` before provisioning; `true` creat
 
 `azd up` provisions the Bicep resources and deploys the Function. Provisioning includes a queue-scoped `sendOnly` SAS rule for service-hook SAS mode and a Key Vault with RBAC enabled. The Function uses managed identity for host storage, Service Bus receive, and DCR publishing. Its Application Insights component writes to the selected Sentinel workspace.
 
+To create and configure every resource manually through the Azure portal, Microsoft Sentinel, and Azure DevOps UI instead, follow [MANUAL_SETUP.md](MANUAL_SETUP.md) (Italian).
+
 The deployment uses a cross-resource-group module for the existing workspace. The deploying identity must have the needed access in both subscriptions if the workspace is in a different subscription. Keep the Function app region and workspace/DCR region aligned where required by Azure Monitor.
 
 ## Optional private hub & spoke integration
